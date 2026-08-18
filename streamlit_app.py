@@ -126,25 +126,24 @@ with st.spinner("Henter ferske FPL-data..."):
 #SIDEBAR
 
 #---------------------------------------------------------
-
 with st.sidebar:
+    st.header("⚙️ Innstillinger")
 
-st.header("⚙️ Innstillinger")
+    budget = st.number_input(
+        "Budsjett (€m)",
+        min_value=80.0,
+        max_value=100.0,
+        value=100.0,
+        step=0.5,
+    )
 
-budget = st.number_input(
-    "Budsjett (£m)",
-    min_value=80.0,
-    max_value=100.0,
-    value=100.0,
-    step=0.5,
-)
+    ownership_limit = st.slider(
+        "Differential maks. eierskap (%)",
+        min_value=1,
+        max_value=20,
+        value=10,
+    )
 
-ownership_limit = st.slider(
-    "Differential maks. eierskap (%)",
-    min_value=1,
-    max_value=20,
-    value=10,
-)
 
 st.divider()
 
