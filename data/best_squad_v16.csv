@@ -1,0 +1,16 @@
+id,name,team_name,team_id,position,price,ownership,expected_minutes,expected_gw_points,value,fixture_next3,next5_avg_difficulty,xgi_proxy,transfer_score,captain_score,differential_score,recommendation
+4,Gabriel,Arsenal,1,DEF,8.0,28.7,90.0,3.928,0.491,0.417,3.2,0.469,4.258,3.989,11.144,AVOID
+356,Virgil,Liverpool,14,DEF,6.5,17.9,90.0,3.212,0.4942,0.583,2.6,0.521,4.124,3.481,10.061,AVOID
+387,O'Reilly,Man City,15,DEF,6.5,21.6,90.0,3.156,0.4855,0.583,2.8,0.879,4.067,3.536,9.906,AVOID
+388,Guéhi,Man City,15,DEF,6.0,20.3,90.0,2.85,0.475,0.583,2.8,0.642,3.868,3.124,9.242,AVOID
+498,Senesi,Spurs,19,DEF,6.0,9.6,90.0,2.85,0.475,0.583,2.8,0.625,4.408,3.119,10.682,AVOID
+346,Calvert-Lewin,Leeds,13,FWD,6.0,27.2,90.0,2.036,0.3393,0.5,2.8,1.0,2.888,2.24,6.769,AVOID
+527,Richarlison,Spurs,19,FWD,6.0,2.5,90.0,2.036,0.3393,0.583,2.8,1.0,4.263,2.307,10.269,AVOID
+526,Solanke,Spurs,19,FWD,6.0,1.7,90.0,2.036,0.3393,0.583,2.8,0.33,4.343,2.166,10.482,AVOID
+1,Raya,Arsenal,1,GKP,6.0,34.1,90.0,3.928,0.6547,0.417,3.2,0.05,4.749,3.829,11.963,AVOID
+350,A.Becker,Liverpool,14,GKP,5.5,3.9,90.0,3.419,0.6216,0.583,2.6,0.05,5.73,3.539,14.073,WATCH
+427,Mbeumo,Man Utd,16,MID,8.0,30.6,90.0,2.85,0.3563,0.667,2.8,1.0,3.636,3.323,8.815,AVOID
+428,Cunha,Man Utd,16,MID,8.0,11.3,90.0,2.85,0.3563,0.667,2.8,1.0,4.006,3.323,9.801,AVOID
+480,Gibbs-White,Nott'm Forest,18,MID,8.0,11.9,90.0,2.8,0.35,0.5,3.0,1.0,3.65,3.08,9.177,AVOID
+368,Szoboszlai,Liverpool,14,MID,7.0,41.2,90.0,2.59,0.37,0.583,2.6,1.0,3.409,2.934,8.197,AVOID
+260,Wilson,Leeds,13,MID,6.5,7.3,90.0,2.341,0.3602,0.5,2.8,1.0,3.888,2.575,9.536,AVOID

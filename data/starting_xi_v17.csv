@@ -1,0 +1,12 @@
+id,name,team_name,team_id,position,price,ownership,expected_minutes,expected_gw_points,value,fixture_next3,next5_avg_difficulty,xgi_proxy,transfer_score,captain_score,differential_score,recommendation
+1,Raya,Arsenal,1,GKP,6.0,34.1,90.0,3.88,0.6467,0.417,3.2,0.05,5.72,3.346,7.139,BUY
+4,Gabriel,Arsenal,1,DEF,8.0,28.7,90.0,3.88,0.485,0.417,3.2,0.469,5.627,3.668,7.011,BUY
+356,Virgil,Liverpool,14,DEF,6.5,17.9,90.0,3.193,0.4912,0.583,2.6,0.521,5.083,2.596,6.213,BUY
+387,O'Reilly,Man City,15,DEF,6.5,21.6,90.0,3.193,0.4912,0.583,2.8,0.879,5.083,2.655,6.213,BUY
+388,Guéhi,Man City,15,DEF,6.0,20.3,90.0,2.884,0.4807,0.583,2.8,0.642,4.758,2.373,5.775,BUY
+498,Senesi,Spurs,19,DEF,6.0,9.6,90.0,2.884,0.4807,0.583,2.8,0.625,4.992,2.37,6.351,BUY
+426,B.Fernandes,Man Utd,16,MID,12.0,48.9,90.0,4.24,0.3533,0.667,2.8,1.0,6.067,5.224,7.507,BUY
+428,Cunha,Man Utd,16,MID,8.0,11.3,90.0,2.968,0.371,0.667,2.8,1.0,4.985,3.822,6.225,BUY
+95,O.Dango,Brentford,4,MID,6.5,1.4,90.0,2.369,0.3645,0.583,3.0,1.0,4.737,3.111,6.399,BUY
+544,Xhaka,Sunderland,20,MID,5.5,4.7,90.0,2.12,0.3855,0.667,3.2,0.474,4.447,2.598,5.818,WATCH
+552,Brobbey,Sunderland,20,FWD,6.0,15.4,90.0,2.12,0.3533,0.667,3.2,0.669,3.964,2.816,4.668,AVOID

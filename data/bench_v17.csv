@@ -1,0 +1,5 @@
+id,name,team_name,team_id,position,price,ownership,expected_minutes,expected_gw_points,value,fixture_next3,next5_avg_difficulty,xgi_proxy,transfer_score,captain_score,differential_score,recommendation
+384,Donnarumma,Man City,15,GKP,5.5,9.8,90.0,3.399,0.618,0.583,2.8,0.05,5.562,2.502,7.112,BUY
+372,Mac Allister,Liverpool,14,MID,5.5,1.8,90.0,2.06,0.3745,0.583,2.6,0.558,4.428,2.534,5.963,WATCH
+526,Solanke,Spurs,19,FWD,6.0,1.7,90.0,2.06,0.3433,0.583,2.8,0.33,4.396,2.484,5.924,WATCH
+527,Richarlison,Spurs,19,FWD,6.0,2.6,90.0,2.06,0.3433,0.583,2.8,1.0,4.357,2.919,5.828,WATCH
