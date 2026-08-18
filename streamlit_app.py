@@ -218,11 +218,10 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(
 #=========================================================
 
 with tab1:
+    st.header("🏆 Beste 15-mannstropp")
 
-st.header("🏆 Beste 15-mannstropp")
-
-with st.spinner("Optimaliserer troppen..."):
-    result = select_squad(df, budget)
+    with st.spinner("Optimaliserer troppen..."):
+        result = select_squad(df, budget)
 
 if result:
 
