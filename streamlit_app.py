@@ -104,21 +104,22 @@ unsafe_allow_html=True,
 
 @st.cache_data(ttl=900)
 def get_analysis():
-data, teams, raw_players = load_fpl()
-fixtures = load_fixtures()
+    data, teams, raw_players = load_fpl()
+    fixtures = load_fixtures()
 
-df = build_players(raw_players, teams, fixtures)
-df = assign_recommendations(df)
+    df = build_players(raw_players, teams, fixtures)
+    df = assign_recommendations(df)
 
-return df, teams
+    return df, teams
+
 
 with st.spinner("Henter ferske FPL-data..."):
-try:
-df, teams = get_analysis()
-data_loaded = True
-except Exception as e:
-data_loaded = False
-st.error(f"Kunne ikke hente FPL-data: {e}")
+    try:
+        df, teams = get_analysis()
+        data_loaded = True
+    except Exception as e:
+        data_loaded = False
+        st.error(f"Kunne ikke hente FPL-data: {e}")
 
 #---------------------------------------------------------
 
