@@ -287,8 +287,10 @@ with tab5:
 with tab6:
     st.header("🧩 Bygg laget rundt mine spillere")
     st.caption("Start med en tom bane. Trykk **＋** på akkurat den posisjonen du vil fylle, velg spilleren, og la modellen bygge resten av troppen rundt valgene dine.")
+    st.info("Utgangspunkt: **4–4–2**. Banen starter alltid tom, og hvert **＋** åpner kun spillere fra den aktuelle posisjonen.")
 
-    formation = st.selectbox("Formasjon", list(FORMATIONS.keys()), index=3, format_func=lambda f: f"{f} · {FORMATIONS[f]}", key="build_formation")
+    # Bevisst fast 4–4–2 som utgangspunkt. Formasjonen bygges visuelt gjennom de tomme plassene på banen.
+    formation = "4-4-2"
     shape = formation_shape(formation)
     valid_slots = ["GKP_0"] + [f"DEF_{i}" for i in range(shape["DEF"])] + [f"MID_{i}" for i in range(shape["MID"])] + [f"FWD_{i}" for i in range(shape["FWD"])]
 
@@ -385,7 +387,7 @@ with tab6:
             score, cost, squad, _, _ = stored
             display_xi = build_display_xi(squad, selected_ids, formation)
             if display_xi is None:
-                st.warning("Modellen fant troppen, men den valgte formasjonen har ikke plass til alle låste spillere. Velg en annen formasjon.")
+                st.warning("Modellen fant troppen, men den valgte formasjonen har ikke plass til alle låste spillere.")
             else:
                 xi_ids = {p["id"] for p in display_xi}
                 bench = sorted([p for p in squad if p["id"] not in xi_ids], key=lambda p: (p["expected_gw_points"], p.get("minutes_probability",0)), reverse=True)[:4]
