@@ -104,6 +104,23 @@ st.markdown(
         width: 22px; height: 22px; line-height: 22px; border-radius: 50%; font-weight: 900; font-size: .72rem;
     }
     .vice .cap-mark { background: #d8dee9; }
+    .bench-wrap {
+        border-radius: 20px;
+        padding: 16px 18px 18px;
+        background: rgba(255,255,255,.025);
+        border: 1px solid rgba(255,255,255,.08);
+        margin: .3rem 0 1.2rem;
+    }
+    .bench-title { font-size: 1.05rem; font-weight: 800; margin-bottom: .8rem; }
+    .bench-row {
+        display: flex;
+        justify-content: space-evenly;
+        align-items: flex-start;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 4px 2px 2px;
+    }
+    .bench-row .player-card { flex: 0 0 112px; }
     .section-head { display:flex; align-items:baseline; gap:.6rem; margin-top:.4rem; }
     .section-head h2 { margin:0; }
     .section-sub { opacity:.55; font-size:.85rem; }
@@ -121,7 +138,6 @@ st.markdown(
 def photo_url(photo):
     if not photo:
         return ""
-    # FPL photo values normally look like 123456.jpg.
     stem = str(photo).rsplit(".", 1)[0]
     return f"https://resources.premierleague.com/premierleague/photos/players/250x250/p{stem}.png"
 
@@ -180,6 +196,17 @@ def render_pitch(xi, cap, vice):
         {row("DEF", "row-def")}
         {row("GKP", "row-gkp")}
       </div>
+    </div>'''
+
+
+def render_bench(bench):
+    cards = []
+    for p in bench:
+        cards.append(player_card(p))
+    return f'''
+    <div class="bench-wrap">
+      <div class="bench-title">🪑 Benk <span class="section-sub">· førstevalg vises først</span></div>
+      <div class="bench-row">{"".join(cards)}</div>
     </div>'''
 
 
@@ -253,21 +280,16 @@ with tab1:
         with a: st.metric("Troppskostnad", f"£{cost:.1f}m")
         with b: st.metric("Budsjett igjen", f"£{budget-cost:.1f}m")
         with c: st.metric("Forventede XI-poeng", f"{xi_points:.1f}")
+
+        # Først banen, deretter benken, deretter kaptein/visekaptein.
         st.markdown(render_pitch(xi, cap, vice), unsafe_allow_html=True)
+        st.markdown(render_bench(bench), unsafe_allow_html=True)
 
         c1, c2 = st.columns(2)
         with c1:
             st.markdown(f'<div class="locked-card"><b>👑 Kaptein</b><br><span style="font-size:1.2rem;font-weight:800;">{html.escape(cap["name"])}</span><br><span class="pill">{cap["team_name"]}</span><span class="pill">{cap["expected_gw_points"]:.2f} forventede poeng</span></div>', unsafe_allow_html=True)
         with c2:
             st.markdown(f'<div class="locked-card"><b>◉ Visekaptein</b><br><span style="font-size:1.2rem;font-weight:800;">{html.escape(vice["name"])}</span><br><span class="pill">{vice["team_name"]}</span><span class="pill">{vice["expected_gw_points"]:.2f} forventede poeng</span></div>', unsafe_allow_html=True)
-
-        st.markdown('<div class="section-head"><h3>Bench</h3><span class="section-sub">Førstevalg på benken vises først</span></div>', unsafe_allow_html=True)
-        bench_df = pd.DataFrame(bench)
-        bench_df["Spiller"] = bench_df["name"]
-        bench_df["Klubb"] = bench_df["team_name"]
-        bench_df["Pris"] = bench_df["price"].map(lambda x: f"£{x:.1f}m")
-        bench_df["Forventet"] = bench_df["expected_gw_points"].map(lambda x: f"{x:.2f}")
-        st.dataframe(bench_df[["Spiller","Klubb","position","Pris","Forventet"]].rename(columns={"position":"Pos"}), use_container_width=True, hide_index=True)
 
         with st.expander("🔎 Vis optimaliseringsdetaljer"):
             st.write(f"Squad objective: **{score:.2f}**")
@@ -323,9 +345,11 @@ with tab6:
     st.markdown('<div class="section-head"><h2>🧩 Bygg laget rundt mine spillere</h2><span class="section-sub">Lås dine spillere – modellen optimaliserer resten</span></div>', unsafe_allow_html=True)
     lookup = df.set_index("id").to_dict("index")
     ids = df["id"].tolist()
+
     def label(pid):
         p = lookup.get(pid, {})
         return f'{p.get("name","?")} · {p.get("team_name","?")} · {p.get("position","?")} · £{p.get("price",0):.1f}m'
+
     selected = st.multiselect("🔒 Velg spillerne du absolutt vil ha", ids, format_func=label, key="design_locked")
     if selected:
         locked = df[df["id"].isin(selected)].copy()
@@ -345,6 +369,12 @@ with tab6:
                 vice = max([x for x in xi if x["id"] != cap["id"]], key=lambda x: x["captain_score"])
                 st.success("Laget er bygget rundt dine valgte spillere.")
                 st.markdown(render_pitch(xi, cap, vice), unsafe_allow_html=True)
+                st.markdown(render_bench(bench), unsafe_allow_html=True)
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown(f'<div class="locked-card"><b>👑 Kaptein</b><br><span style="font-size:1.2rem;font-weight:800;">{html.escape(cap["name"])}</span><br><span class="pill">{cap["team_name"]}</span><span class="pill">{cap["expected_gw_points"]:.2f} forventede poeng</span></div>', unsafe_allow_html=True)
+                with c2:
+                    st.markdown(f'<div class="locked-card"><b>◉ Visekaptein</b><br><span style="font-size:1.2rem;font-weight:800;">{html.escape(vice["name"])}</span><br><span class="pill">{vice["team_name"]}</span><span class="pill">{vice["expected_gw_points"]:.2f} forventede poeng</span></div>', unsafe_allow_html=True)
                 a,b,c = st.columns(3)
                 with a: st.metric("Troppskostnad", f"£{cost:.1f}m")
                 with b: st.metric("Budsjett igjen", f"£{budget-cost:.1f}m")
