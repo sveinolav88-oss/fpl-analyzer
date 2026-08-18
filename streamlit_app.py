@@ -177,7 +177,7 @@ with ...:
 f"{players_count}",
 )
 
-with c2:
+    with c2:
 st.metric(
 "Snitt forventede poeng",
 f"{avg_points:.2f}",
