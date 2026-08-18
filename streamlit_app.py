@@ -171,8 +171,8 @@ top_player = df.sort_values("expected_gw_points", ascending=False).iloc[0]
 
 c1, c2, c3, c4 = st.columns(4)
 
-with c1:
-st.metric(
+with ...:
+    st.metric(
 "Spillere analysert",
 f"{players_count}",
 )
