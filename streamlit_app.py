@@ -31,64 +31,48 @@ st.markdown(
     .hero p { margin:.5rem 0 0; opacity:.75; }
     .section-card { padding:1rem 1.2rem; border-radius:16px; border:1px solid rgba(128,128,128,.22); background:rgba(128,128,128,.04); margin-bottom:1rem; }
 
-    /* V2 football-pitch design */
+    /* V2 football-pitch design: only real football-field markings */
     .pitch-anchor { display:none; }
     div[data-testid="stVerticalBlock"]:has(.pitch-anchor) {
         position:relative;
         overflow:hidden;
         margin:.6rem 0 1.2rem;
-        padding:1.25rem .9rem 1rem;
-        border-radius:28px;
+        padding:1.1rem .8rem .8rem;
+        border-radius:26px;
         border:1px solid rgba(155,235,178,.24);
-        background:
-          radial-gradient(circle at 50% 50%, rgba(255,255,255,.035) 0 7.5%, transparent 7.7% 100%),
-          linear-gradient(90deg, transparent 49.8%, rgba(194,255,210,.20) 49.9%, rgba(194,255,210,.20) 50.1%, transparent 50.2%),
-          linear-gradient(180deg, rgba(22,112,65,.94), rgba(10,73,43,.96));
+        background-color:#1f6b3d;
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 1000 650' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='white' stroke-opacity='.28' stroke-width='2'%3E%3Crect x='12' y='12' width='976' height='626'/%3E%3Cline x1='12' y1='325' x2='988' y2='325'/%3E%3Ccircle cx='500' cy='325' r='72'/%3E%3Cline x1='350' y1='12' x2='350' y2='145'/%3E%3Cline x1='650' y1='12' x2='650' y2='145'/%3E%3Cline x1='350' y1='145' x2='650' y2='145'/%3E%3Cline x1='425' y1='12' x2='425' y2='70'/%3E%3Cline x1='575' y1='12' x2='575' y2='70'/%3E%3Cline x1='425' y1='70' x2='575' y2='70'/%3E%3Cline x1='350' y1='638' x2='350' y2='505'/%3E%3Cline x1='650' y1='638' x2='650' y2='505'/%3E%3Cline x1='350' y1='505' x2='650' y2='505'/%3E%3Cline x1='425' y1='638' x2='425' y2='580'/%3E%3Cline x1='575' y1='638' x2='575' y2='580'/%3E%3Cline x1='425' y1='580' x2='575' y2='580'/%3E%3C/g%3E%3Cg fill='white' fill-opacity='.25'%3E%3Ccircle cx='500' cy='325' r='3'/%3E%3Ccircle cx='500' cy='95' r='3'/%3E%3Ccircle cx='500' cy='555' r='3'/%3E%3C/g%3E%3C/svg%3E");
+        background-size:100% 100%;
         box-shadow: inset 0 0 70px rgba(0,0,0,.18), 0 10px 35px rgba(0,0,0,.18);
     }
-    div[data-testid="stVerticalBlock"]:has(.pitch-anchor)::before {
-        content:"";
-        position:absolute;
-        inset:10px;
-        border:2px solid rgba(220,255,228,.20);
-        border-radius:20px;
-        pointer-events:none;
-    }
-    div[data-testid="stVerticalBlock"]:has(.pitch-anchor)::after {
-        content:"";
-        position:absolute;
-        left:22%; right:22%; top:50%; height:23%;
-        transform:translateY(-50%);
-        border:2px solid rgba(220,255,228,.16);
-        border-radius:4px;
-        pointer-events:none;
-    }
     .pitch-anchor ~ * { position:relative; z-index:1; }
-    .pitch-title { text-align:center; font-weight:850; letter-spacing:.10em; font-size:.72rem; color:rgba(236,255,241,.72); margin:.45rem 0 .12rem; }
-    .pitch-empty { text-align:center; color:rgba(236,255,241,.62); font-size:.73rem; margin-top:-.15rem; }
+    .pitch-title { text-align:center; font-weight:850; letter-spacing:.10em; font-size:.72rem; color:rgba(236,255,241,.78); margin:.45rem 0 .12rem; }
+    .pitch-empty { text-align:center; color:rgba(236,255,241,.65); font-size:.73rem; margin-top:-.15rem; }
     .player-card { text-align:center; min-height:138px; padding:.35rem .2rem .45rem; }
-    .player-card img { width:76px; height:76px; object-fit:cover; border-radius:50%; border:3px solid rgba(255,255,255,.88); background:#20242d; display:inline-block; }
+    .player-card img { width:76px; height:76px; object-fit:cover; border-radius:50%; border:3px solid rgba(255,255,255,.9); background:#20242d; display:inline-block; }
     .player-card .name { font-weight:850; font-size:.92rem; margin-top:.2rem; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .player-card .team { color:rgba(255,255,255,.68); font-size:.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .player-card .meta { color:rgba(255,255,255,.78); font-size:.72rem; }
+    .player-card .team { color:rgba(255,255,255,.72); font-size:.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .player-card .meta { color:rgba(255,255,255,.82); font-size:.72rem; }
     .locked-badge { display:inline-block; margin-top:.15rem; padding:.12rem .42rem; border-radius:999px; font-size:.65rem; background:rgba(239,94,86,.20); color:#ffd1cc; }
 
     .bench-card { padding:.55rem; border-radius:14px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.025); text-align:center; }
     .bench-card img { width:58px; height:58px; object-fit:cover; border-radius:50%; border:2px solid rgba(255,255,255,.7); display:inline-block; }
     .bench-card .name { font-weight:750; font-size:.82rem; margin-top:.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .bench-card .meta { font-size:.7rem; opacity:.68; }
+    .captain-card { padding:1rem; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.025); text-align:center; min-height:260px; }
+    .captain-card .player-card { min-height:190px; }
     div[data-testid="stMetric"] { padding:.45rem .15rem; }
 
-    /* Make pitch controls feel like FPL pitch buttons */
+    /* Pitch controls */
     div[data-testid="stVerticalBlock"]:has(.pitch-anchor) button {
-        border-color:rgba(220,255,228,.25);
-        background:rgba(4,45,26,.28);
+        border-color:rgba(220,255,228,.28);
+        background:rgba(4,45,26,.30);
         color:white;
         border-radius:12px;
     }
     div[data-testid="stVerticalBlock"]:has(.pitch-anchor) button:hover {
-        border-color:rgba(220,255,228,.55);
-        background:rgba(4,45,26,.45);
+        border-color:rgba(220,255,228,.60);
+        background:rgba(4,45,26,.48);
     }
     </style>
     """,
@@ -113,8 +97,6 @@ def get_analysis():
     df = build_players(raw_players, teams, fixtures)
     df = assign_recommendations(df)
 
-    # FPL API's `photo` field is the player portrait identifier.
-    # The previous implementation used `code`, which is not the portrait id.
     photos = {}
     for p in raw_players:
         photo = str(p.get("photo", "") or "").strip()
@@ -124,7 +106,7 @@ def get_analysis():
     df["photo_code"] = df["id"].map(photos).fillna("")
     df["image_url"] = df["photo_code"].map(
         lambda photo: (
-            f"https://resources.premierleague.com/premierleague/photos/players/250x250/p{photo}.png"
+            f"https://resources.premierleague.com/premierleague/photos/players/110x140/p{photo}.png"
             if photo else ""
         )
     )
@@ -170,14 +152,30 @@ def esc(value):
     return html.escape(str(value))
 
 
+def initials(p):
+    name = str(p.get("name", "?"))
+    parts = [x for x in name.replace("-", " ").split() if x]
+    return "".join(x[0] for x in parts[:2]).upper() or "?"
+
+
 def image_tag(p, size=76):
-    url = p.get("image_url", "")
-    photo = str(p.get("photo_code", "") or "")
-    if not url and photo:
-        url = f"https://resources.premierleague.com/premierleague/photos/players/250x250/p{photo}.png"
-    if not url:
-        return ""
-    return f'<img src="{esc(url)}" width="{size}" height="{size}" loading="lazy" onerror="this.style.visibility=\'hidden\'">'
+    photo = str(p.get("photo_code", "") or "").strip()
+    primary = str(p.get("image_url", "") or "").strip()
+    if not primary and photo:
+        primary = f"https://resources.premierleague.com/premierleague/photos/players/110x140/p{photo}.png"
+    fallback = f"https://resources.premierleague.com/premierleague/photos/players/250x250/p{photo}.png" if photo else ""
+    if primary:
+        fallback_attr = esc(fallback)
+        placeholder = initials(p)
+        return (
+            f'<div class="image-wrap" style="width:{size}px;height:{size}px">'
+            f'<img src="{esc(primary)}" width="{size}" height="{size}" loading="lazy" '
+            f'data-fallback="{fallback_attr}" alt="{esc(p.get("name", ""))}" '
+            f'onerror="if(this.dataset.fallback && this.src!==this.dataset.fallback){{this.src=this.dataset.fallback;}}else{{this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';}}">'
+            f'<span class="image-placeholder">{esc(placeholder)}</span>'
+            f'</div>'
+        )
+    return f'<div class="image-wrap" style="width:{size}px;height:{size}px"><span class="image-placeholder">{esc(initials(p))}</span></div>'
 
 
 def player_card(p, locked=False):
@@ -277,10 +275,9 @@ def captain_cards(xi):
     c1, c2 = st.columns(2)
     for col, title, p in [(c1,"KAPTEIN",cap),(c2,"VICE-CAPTAIN",vice)]:
         with col:
-            st.markdown(
-                f'<div class="section-card"><div class="pitch-title">{title}</div>{player_card(p)}<div style="text-align:center">Forventet: <b>{float(p["expected_gw_points"]):.2f}</b> poeng</div></div>',
-                unsafe_allow_html=True,
-            )
+            st.markdown(f'<div class="captain-card"><div class="pitch-title">{title}</div>', unsafe_allow_html=True)
+            st.markdown(player_card(p), unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align:center">Forventet: <b>{float(p["expected_gw_points"]):.2f}</b> poeng</div></div>', unsafe_allow_html=True)
 
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
