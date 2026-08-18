@@ -367,7 +367,7 @@ with tab6:
         st.session_state.pop("build_result", None)
         st.rerun()
 
-    with st.container(key=key):
+    with st.container(key="build-pitch"):
         st.markdown('<span class="pitch-anchor"></span>', unsafe_allow_html=True)
         st.markdown(f'<div class="pitch-title">{formation} · TOM BANE</div>', unsafe_allow_html=True)
         for pos, label in [("GKP","KEEPER"),("DEF","FORSVAR"),("MID","MIDTBANE"),("FWD","ANGREP")]:
