@@ -241,13 +241,21 @@ def render_static_pitch(xi, formation, locked_ids=None, title="LAGOPPSTILLING", 
                     content = player_card(players[i], players[i].get("id") in locked_ids) if i < len(players) else '<div class="pitch-empty">—</div>'
                     st.markdown(f'<div class="pitch-slot {css_class}">{content}</div>', unsafe_allow_html=True)
 
+        # Keep forwards centered regardless of whether the XI contains one or two forwards.
         players = by_pos["FWD"][:shape["FWD"]]
-        cols = st.columns(4, gap="small")
-        forward_columns = [1, 2] if shape["FWD"] == 2 else list(range(shape["FWD"]))
-        for i, col_index in enumerate(forward_columns):
-            with cols[col_index]:
-                content = player_card(players[i], players[i].get("id") in locked_ids) if i < len(players) else '<div class="pitch-empty">—</div>'
+        if len(players) == 1:
+            fwd_cols = st.columns([1, 2, 1], gap="small")
+            with fwd_cols[1]:
+                p = players[0]
+                content = player_card(p, p.get("id") in locked_ids)
                 st.markdown(f'<div class="pitch-slot pitch-row-fwd">{content}</div>', unsafe_allow_html=True)
+        else:
+            fwd_cols = st.columns([1, 1, 1], gap="small")
+            for i, col in enumerate(fwd_cols[:len(players)]):
+                with col:
+                    p = players[i]
+                    content = player_card(p, p.get("id") in locked_ids)
+                    st.markdown(f'<div class="pitch-slot pitch-row-fwd">{content}</div>', unsafe_allow_html=True)
 
 
 def render_bench(bench, locked_ids=None):
