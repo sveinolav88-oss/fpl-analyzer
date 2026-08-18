@@ -157,7 +157,7 @@ st.caption("FPL Analyzer")
 st.caption("Live data fra Fantasy Premier League API")
 
 if not data_loaded:
-st.stop()
+    st.stop()
 
 #---------------------------------------------------------
 
