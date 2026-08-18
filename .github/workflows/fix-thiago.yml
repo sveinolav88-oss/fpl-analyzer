@@ -1,0 +1,54 @@
+name: Fix FPL forward positioning
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-thiago.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix forward layout
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('streamlit_app.py')
+          s = p.read_text()
+          old = '''        players = by_pos["FWD"][:shape["FWD"]]
+        cols = st.columns(4, gap="small")
+        forward_columns = [1, 2] if shape["FWD"] == 2 else list(range(shape["FWD"]))
+        for i, col_index in enumerate(forward_columns):
+            with cols[col_index]:
+                content = player_card(players[i], players[i].get("id") in locked_ids) if i < len(players) else '<div class="pitch-empty">—</div>'
+                st.markdown(f'<div class="pitch-slot pitch-row-fwd">{content}</div>', unsafe_allow_html=True)'''
+          new = '''        # Forwards must always be centered on the pitch. Use a dedicated
+        # centered layout instead of the generic four-column grid.
+        players = by_pos["FWD"][:shape["FWD"]]
+        if len(players) == 1:
+            fwd_cols = st.columns([1, 2, 1], gap="small")
+            with fwd_cols[1]:
+                p = players[0]
+                content = player_card(p, p.get("id") in locked_ids)
+                st.markdown(f'<div class="pitch-slot pitch-row-fwd">{content}</div>', unsafe_allow_html=True)
+        else:
+            fwd_cols = st.columns([1, 1, 1], gap="small")
+            for i, col in enumerate(fwd_cols[:len(players)]):
+                with col:
+                    p = players[i]
+                    content = player_card(p, p.get("id") in locked_ids)
+                    st.markdown(f'<div class="pitch-slot pitch-row-fwd">{content}</div>', unsafe_allow_html=True)'''
+          if old not in s:
+              raise SystemExit('Target forward layout block not found')
+          p.write_text(s.replace(old, new))
+          PY
+      - name: Commit fix and remove one-time workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add streamlit_app.py
+          git rm .github/workflows/fix-thiago.yml
+          git commit -m 'Fix centered forward positioning on FPL pitch'
+          git push
