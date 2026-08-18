@@ -52,3 +52,5 @@ jobs:
           git rm .github/workflows/fix-thiago.yml
           git commit -m 'Fix centered forward positioning on FPL pitch'
           git push
+
+# trigger workflow registration
