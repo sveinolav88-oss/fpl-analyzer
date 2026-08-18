@@ -223,114 +223,114 @@ with tab1:
     with st.spinner("Optimaliserer troppen..."):
         result = select_squad(df, budget)
 
-if result:
+    if result:
 
-    score, cost, squad, xi, bench = result
+        score, cost, squad, xi, bench = result
 
-    m1, m2, m3 = st.columns(3)
+        m1, m2, m3 = st.columns(3)
 
-    with m1:
-        st.metric("Troppskostnad", f"£{cost:.1f}m")
+        with m1:
+            st.metric("Troppskostnad", f"£{cost:.1f}m")
 
-    with m2:
-        st.metric("Budsjett igjen", f"£{budget - cost:.1f}m")
+        with m2:
+            st.metric("Budsjett igjen", f"£{budget - cost:.1f}m")
 
-    with m3:
-        st.metric("Forventede XI-poeng", f"{sum(x['expected_gw_points'] for x in xi):.1f}")
+        with m3:
+            st.metric("Forventede XI-poeng", f"{sum(x['expected_gw_points'] for x in xi):.1f}")
 
-    st.subheader("Starting XI")
+        st.subheader("Starting XI")
 
-    xi_df = pd.DataFrame(xi)
+        xi_df = pd.DataFrame(xi)
 
-    # Captain
-    cap = max(xi, key=lambda x: x["captain_score"])
+        # Captain
+        cap = max(xi, key=lambda x: x["captain_score"])
 
-    vice_candidates = [
-        x for x in xi
-        if x["id"] != cap["id"]
-    ]
+        vice_candidates = [
+            x for x in xi
+            if x["id"] != cap["id"]
+        ]
 
-    vice = max(
-        vice_candidates,
-        key=lambda x: x["captain_score"]
-    )
-
-    # Captain cards
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.markdown(
-            f"""
-            <div class="card">
-                <div class="small-muted">© KAPTEIN</div>
-                <div class="player-name">
-                    {cap['name']} ({cap['position']})
-                </div>
-                <div>
-                    Forventet: {cap['expected_gw_points']:.2f} poeng
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        vice = max(
+            vice_candidates,
+            key=lambda x: x["captain_score"]
         )
 
-    with c2:
-        st.markdown(
-            f"""
-            <div class="card">
-                <div class="small-muted">VICE-CAPTAIN</div>
-                <div class="player-name">
-                    {vice['name']} ({vice['position']})
+        # Captain cards
+        c1, c2 = st.columns(2)
+
+        with c1:
+            st.markdown(
+                f"""
+                <div class="card">
+                    <div class="small-muted">© KAPTEIN</div>
+                    <div class="player-name">
+                        {cap['name']} ({cap['position']})
+                    </div>
+                    <div>
+                        Forventet: {cap['expected_gw_points']:.2f} poeng
+                    </div>
                 </div>
-                <div>
-                    Forventet: {vice['expected_gw_points']:.2f} poeng
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with c2:
+            st.markdown(
+                f"""
+                <div class="card">
+                    <div class="small-muted">VICE-CAPTAIN</div>
+                    <div class="player-name">
+                        {vice['name']} ({vice['position']})
+                    </div>
+                    <div>
+                        Forventet: {vice['expected_gw_points']:.2f} poeng
+                    </div>
                 </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+                """,
+                unsafe_allow_html=True,
+            )
+
+        st.subheader("Starting XI")
+
+        show_cols = [
+            "name",
+            "team_name",
+            "position",
+            "price",
+            "expected_minutes",
+            "expected_gw_points",
+            "captain_score",
+        ]
+
+        st.dataframe(
+            xi_df[show_cols],
+            use_container_width=True,
+            hide_index=True,
         )
 
-    st.subheader("Starting XI")
+        st.subheader("Bench")
 
-    show_cols = [
-        "name",
-        "team_name",
-        "position",
-        "price",
-        "expected_minutes",
-        "expected_gw_points",
-        "captain_score",
-    ]
+        bench_df = pd.DataFrame(bench)
 
-    st.dataframe(
-        xi_df[show_cols],
-        use_container_width=True,
-        hide_index=True,
-    )
+        st.dataframe(
+            bench_df[
+                [
+                    "name",
+                    "team_name",
+                    "position",
+                    "price",
+                    "expected_minutes",
+                    "expected_gw_points",
+                ]
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
 
-    st.subheader("Bench")
+    else:
+        st.error("Fant ingen gyldig FPL-tropp.")
 
-    bench_df = pd.DataFrame(bench)
-
-    st.dataframe(
-        bench_df[
-            [
-                "name",
-                "team_name",
-                "position",
-                "price",
-                "expected_minutes",
-                "expected_gw_points",
-            ]
-        ],
-        use_container_width=True,
-        hide_index=True,
-    )
-
-else:
-    st.error("Fant ingen gyldig FPL-tropp.")
-
-#=========================================================
+    #=========================================================
 
 #TRANSFERS
 
@@ -338,162 +338,162 @@ else:
 
 with tab2:
 
-st.header("🔄 Beste transfermål")
+    st.header("🔄 Beste transfermål")
 
-position_filter = st.multiselect(
-    "Posisjon",
-    ["GKP", "DEF", "MID", "FWD"],
-    default=["GKP", "DEF", "MID", "FWD"],
-)
+    position_filter = st.multiselect(
+        "Posisjon",
+        ["GKP", "DEF", "MID", "FWD"],
+        default=["GKP", "DEF", "MID", "FWD"],
+    )
 
-transfer_df = df[
-    df["position"].isin(position_filter)
-].copy()
+    transfer_df = df[
+        df["position"].isin(position_filter)
+    ].copy()
 
-transfer_df = transfer_df.sort_values(
-    "transfer_score",
-    ascending=False,
-).head(30)
+    transfer_df = transfer_df.sort_values(
+        "transfer_score",
+        ascending=False,
+    ).head(30)
 
-st.dataframe(
-    transfer_df[
-        [
-            "name",
-            "team_name",
-            "position",
-            "price",
-            "ownership",
-            "expected_minutes",
-            "expected_gw_points",
-            "value",
-            "fixture_next3",
-            "transfer_score",
-            "recommendation",
-        ]
-    ],
-    use_container_width=True,
-    hide_index=True,
-)
+    st.dataframe(
+        transfer_df[
+            [
+                "name",
+                "team_name",
+                "position",
+                "price",
+                "ownership",
+                "expected_minutes",
+                "expected_gw_points",
+                "value",
+                "fixture_next3",
+                "transfer_score",
+                "recommendation",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
 
-#=========================================================
+    #=========================================================
 
-#CAPTAINS
+    #CAPTAINS
 
-#=========================================================
+    #=========================================================
 
 with tab3:
 
-st.header("©️ Kapteinguide")
+    st.header("©️ Kapteinguide")
 
-st.info(
-    "Kapteinmodellen prioriterer forventede poeng, spilletid, "
-    "posisjon og fixture. Eierskap og pris påvirker ikke kapteinvalget."
-)
+    st.info(
+        "Kapteinmodellen prioriterer forventede poeng, spilletid, "
+        "posisjon og fixture. Eierskap og pris påvirker ikke kapteinvalget."
+    )
 
-captain_df = df[
-    df["expected_minutes"] >= 60
-].copy()
+    captain_df = df[
+        df["expected_minutes"] >= 60
+    ].copy()
 
-captain_df = captain_df.sort_values(
-    ["captain_score", "expected_gw_points"],
-    ascending=False,
-).head(20)
+    captain_df = captain_df.sort_values(
+        ["captain_score", "expected_gw_points"],
+        ascending=False,
+    ).head(20)
 
-st.dataframe(
-    captain_df[
-        [
-            "name",
-            "team_name",
-            "position",
-            "price",
-            "expected_minutes",
-            "expected_gw_points",
-            "fixture_next3",
-            "captain_score",
-        ]
-    ],
-    use_container_width=True,
-    hide_index=True,
-)
+    st.dataframe(
+        captain_df[
+            [
+                "name",
+                "team_name",
+                "position",
+                "price",
+                "expected_minutes",
+                "expected_gw_points",
+                "fixture_next3",
+                "captain_score",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
 
-#=========================================================
+    #=========================================================
 
-#DIFFERENTIALS
+    #DIFFERENTIALS
 
-#=========================================================
+    #=========================================================
 
 with tab4:
 
-st.header("🔥 Differentials")
+    st.header("🔥 Differentials")
 
-differential_df = df[
-    (df["ownership"] <= ownership_limit)
-    & (df["expected_minutes"] >= 60)
-].copy()
+    differential_df = df[
+        (df["ownership"] <= ownership_limit)
+        & (df["expected_minutes"] >= 60)
+    ].copy()
 
-differential_df = differential_df.sort_values(
-    "differential_score",
-    ascending=False,
-).head(30)
+    differential_df = differential_df.sort_values(
+        "differential_score",
+        ascending=False,
+    ).head(30)
 
-st.dataframe(
-    differential_df[
-        [
-            "name",
-            "team_name",
-            "position",
-            "price",
-            "ownership",
-            "expected_minutes",
-            "expected_gw_points",
-            "value",
-            "fixture_next3",
-            "differential_score",
-        ]
-    ],
-    use_container_width=True,
-    hide_index=True,
-)
+    st.dataframe(
+        differential_df[
+            [
+                "name",
+                "team_name",
+                "position",
+                "price",
+                "ownership",
+                "expected_minutes",
+                "expected_gw_points",
+                "value",
+                "fixture_next3",
+                "differential_score",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
 
-#=========================================================
+    #=========================================================
 
-#BEST VALUE
+    #BEST VALUE
 
-#=========================================================
+    #=========================================================
 
 with tab5:
 
-st.header("💰 Best value")
+    st.header("💰 Best value")
 
-value_df = df[
-    df["expected_minutes"] >= 60
-].copy()
+    value_df = df[
+        df["expected_minutes"] >= 60
+    ].copy()
 
-value_df = value_df.sort_values(
-    "value",
-    ascending=False,
-).head(30)
+    value_df = value_df.sort_values(
+        "value",
+        ascending=False,
+    ).head(30)
 
-st.dataframe(
-    value_df[
-        [
-            "name",
-            "team_name",
-            "position",
-            "price",
-            "expected_minutes",
-            "expected_gw_points",
-            "value",
-            "fixture_next3",
-        ]
-    ],
-    use_container_width=True,
-    hide_index=True,
-)
+    st.dataframe(
+        value_df[
+            [
+                "name",
+                "team_name",
+                "position",
+                "price",
+                "expected_minutes",
+                "expected_gw_points",
+                "value",
+                "fixture_next3",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
 
-#---------------------------------------------------------
+    #---------------------------------------------------------
 
-#FOOTER
+    #FOOTER
 
 #---------------------------------------------------------
 
