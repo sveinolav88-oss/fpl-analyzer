@@ -31,13 +31,13 @@ st.markdown(
     .hero p { margin:.5rem 0 0; opacity:.75; }
     .section-card { padding:1rem 1.2rem; border-radius:16px; border:1px solid rgba(128,128,128,.22); background:rgba(128,128,128,.04); margin-bottom:1rem; }
 
-    /* V2 football-pitch design: only real football-field markings */
+    /* Football pitch – clean V2 design */
     .pitch-anchor { display:none; }
     .st-key-best-pitch, .st-key-built-pitch, .st-key-build-pitch {
         position:relative;
         overflow:hidden;
-        margin:.6rem 0 1.2rem;
-        padding:1.1rem .8rem .8rem;
+        margin:.6rem 0 1.25rem;
+        padding:1.25rem .8rem 1rem;
         border-radius:26px;
         border:1px solid rgba(155,235,178,.24);
         background-color:#1f6b3d;
@@ -46,19 +46,30 @@ st.markdown(
         box-shadow: inset 0 0 70px rgba(0,0,0,.18), 0 10px 35px rgba(0,0,0,.18);
     }
     .pitch-anchor ~ * { position:relative; z-index:1; }
+    .pitch-layout { display:flex; flex-direction:column; gap:.1rem; }
+    .pitch-row { width:100%; }
+    .pitch-row-gkp { margin-top:.1rem; margin-bottom:1.1rem; }
+    .pitch-row-def { margin-bottom:1.0rem; }
+    .pitch-row-mid { margin-bottom:1.0rem; }
+    .pitch-row-fwd { margin-bottom:.15rem; }
+    .pitch-row-label { text-align:center; font-weight:850; letter-spacing:.10em; font-size:.68rem; color:rgba(236,255,241,.62); margin:.05rem 0 .2rem; }
+    .pitch-formation { text-align:center; font-weight:850; letter-spacing:.12em; font-size:.68rem; color:rgba(236,255,241,.68); margin:0 0 .5rem; }
+    .pitch-slot { min-height:118px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+    .pitch-slot .player-card { width:100%; }
+    .pitch-slot .pitch-empty { min-height:90px; display:flex; align-items:center; justify-content:center; width:100%; }
     .image-wrap { display:inline-flex; align-items:center; justify-content:center; overflow:hidden; border-radius:50%; }
     .image-wrap img { width:100%; height:100%; object-fit:cover; }
     .image-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#20242d; color:rgba(255,255,255,.85); font-weight:800; font-size:.9rem; border:3px solid rgba(255,255,255,.9); }
-    .pitch-title { text-align:center; font-weight:850; letter-spacing:.10em; font-size:.72rem; color:rgba(236,255,241,.78); margin:.45rem 0 .12rem; }
-    .pitch-empty { text-align:center; color:rgba(236,255,241,.65); font-size:.73rem; margin-top:-.15rem; }
-    .player-card { text-align:center; min-height:138px; padding:.35rem .2rem .45rem; }
-    .player-card img { width:76px; height:76px; object-fit:cover; border-radius:50%; border:3px solid rgba(255,255,255,.9); background:#20242d; display:inline-block; }
-    .player-card .name { font-weight:850; font-size:.92rem; margin-top:.2rem; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .player-card .team { color:rgba(255,255,255,.72); font-size:.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .player-card .meta { color:rgba(255,255,255,.82); font-size:.72rem; }
-    .locked-badge { display:inline-block; margin-top:.15rem; padding:.12rem .42rem; border-radius:999px; font-size:.65rem; background:rgba(239,94,86,.20); color:#ffd1cc; }
+    .pitch-empty { text-align:center; color:rgba(236,255,241,.58); font-size:.72rem; }
+    .player-card { text-align:center; min-height:112px; padding:.15rem .1rem .25rem; }
+    .player-card img { width:72px; height:72px; object-fit:cover; border-radius:50%; border:3px solid rgba(255,255,255,.9); background:#20242d; display:inline-block; }
+    .player-card .name { font-weight:850; font-size:.88rem; margin-top:.18rem; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .player-card .team { color:rgba(255,255,255,.72); font-size:.72rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .player-card .meta { color:rgba(255,255,255,.82); font-size:.69rem; }
+    .locked-badge { display:inline-block; margin-top:.12rem; padding:.1rem .38rem; border-radius:999px; font-size:.62rem; background:rgba(239,94,86,.20); color:#ffd1cc; }
 
-    .bench-card { padding:.55rem; border-radius:14px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.025); text-align:center; }
+    .bench-wrap { margin-top:.15rem; }
+    .bench-card { padding:.65rem .45rem; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.045); text-align:center; }
     .bench-card img { width:58px; height:58px; object-fit:cover; border-radius:50%; border:2px solid rgba(255,255,255,.7); display:inline-block; }
     .bench-card .name { font-weight:750; font-size:.82rem; margin-top:.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .bench-card .meta { font-size:.7rem; opacity:.68; }
@@ -66,51 +77,20 @@ st.markdown(
     .captain-card .player-card { min-height:190px; }
     div[data-testid="stMetric"] { padding:.45rem .15rem; }
 
-    /* Pitch controls */
-    .st-key-best-pitch, .st-key-built-pitch, .st-key-build-pitch button {
-        border-color:rgba(220,255,228,.28);
-        background:rgba(4,45,26,.30);
-        color:white;
-        border-radius:12px;
-    }
-    .st-key-best-pitch, .st-key-built-pitch, .st-key-build-pitch button:hover {
-        border-color:rgba(220,255,228,.60);
-        background:rgba(4,45,26,.48);
-    }
-
-    /* Bygg rundt mine spillere: kompakte, like store sirkler for tomme posisjoner */
-    [class*="st-key-plus_"] {
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        min-height:74px;
-    }
+    /* Build-around controls: compact, identical dark circles */
+    [class*="st-key-plus_"] { display:flex; justify-content:center; align-items:center; min-height:86px; }
     [class*="st-key-plus_"] button {
-        width:68px !important;
-        min-width:68px !important;
-        max-width:68px !important;
-        height:68px !important;
-        min-height:68px !important;
-        max-height:68px !important;
-        padding:0 !important;
-        margin:0 auto !important;
-        border-radius:50% !important;
+        width:68px !important; min-width:68px !important; max-width:68px !important;
+        height:68px !important; min-height:68px !important; max-height:68px !important;
+        padding:0 !important; margin:0 auto !important; border-radius:50% !important;
         border:2px solid rgba(220,255,228,.32) !important;
-        background:rgba(8,35,22,.78) !important;
-        color:rgba(255,255,255,.95) !important;
-        font-size:1.45rem !important;
-        line-height:1 !important;
+        background:rgba(8,35,22,.78) !important; color:rgba(255,255,255,.95) !important;
+        font-size:1.45rem !important; line-height:1 !important;
         box-shadow:inset 0 0 16px rgba(0,0,0,.20), 0 4px 12px rgba(0,0,0,.14);
         transition:all .15s ease;
     }
-    [class*="st-key-plus_"] button:hover {
-        border-color:rgba(235,255,240,.72) !important;
-        background:rgba(8,35,22,.96) !important;
-        transform:scale(1.06);
-    }
-    [class*="st-key-plus_"] + .pitch-empty {
-        margin-top:.05rem;
-    }
+    [class*="st-key-plus_"] button:hover { border-color:rgba(235,255,240,.72) !important; background:rgba(8,35,22,.96) !important; transform:scale(1.06); }
+    [class*="st-key-remove_"] button { font-size:.72rem !important; padding:.15rem .35rem !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -216,7 +196,7 @@ def image_tag(p, size=76):
 
 
 def player_card(p, locked=False):
-    img = image_tag(p, 76)
+    img = image_tag(p, 72)
     badge = '<div class="locked-badge">🔒 LÅST</div>' if locked else ''
     return f"""
     <div class="player-card">
@@ -282,26 +262,40 @@ def render_static_pitch(xi, formation, locked_ids=None, title="LAGOPPSTILLING", 
     shape = formation_shape(formation)
     with st.container(key=key):
         st.markdown('<span class="pitch-anchor"></span>', unsafe_allow_html=True)
-        st.markdown(f'<div class="pitch-title">{title}</div>', unsafe_allow_html=True)
-        for pos, label in [("GKP","KEEPER"),("DEF","FORSVAR"),("MID","MIDTBANE"),("FWD","ANGREP")]:
-            st.markdown(f'<div class="pitch-title">{label}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="pitch-formation">{title}</div>', unsafe_allow_html=True)
+
+        # 4-4-2 is deliberately laid out as four true football rows.
+        # Keeper is centered, defenders/midfielders use four equal lanes,
+        # and the two forwards occupy the two central attacking lanes.
+        players = by_pos["GKP"][:shape["GKP"]]
+        gkp = st.columns([1, 2, 1], gap="small")
+        with gkp[1]:
+            st.markdown('<div class="pitch-slot">' + (player_card(players[0], players[0].get("id") in locked_ids) if players else '<div class="pitch-empty">—</div>') + '</div>', unsafe_allow_html=True)
+
+        for pos, css_class in [("DEF", "pitch-row-def"), ("MID", "pitch-row-mid")]:
             players = by_pos[pos][:shape[pos]]
-            cols = st.columns(max(1, shape[pos]), gap="small")
+            cols = st.columns(4, gap="small")
             for i, col in enumerate(cols):
                 with col:
-                    if i < len(players):
-                        p = players[i]
-                        st.markdown(player_card(p, p.get("id") in locked_ids), unsafe_allow_html=True)
-                    else:
-                        st.markdown('<div class="pitch-empty">—</div>', unsafe_allow_html=True)
+                    content = player_card(players[i], players[i].get("id") in locked_ids) if i < len(players) else '<div class="pitch-empty">—</div>'
+                    st.markdown(f'<div class="pitch-slot {css_class}">{content}</div>', unsafe_allow_html=True)
+
+        players = by_pos["FWD"][:shape["FWD"]]
+        cols = st.columns(4, gap="small")
+        for i, col_index in enumerate([1, 2]):
+            with cols[col_index]:
+                content = player_card(players[i], players[i].get("id") in locked_ids) if i < len(players) else '<div class="pitch-empty">—</div>'
+                st.markdown(f'<div class="pitch-slot pitch-row-fwd">{content}</div>', unsafe_allow_html=True)
 
 
 def render_bench(bench, locked_ids=None):
     locked_ids = set(locked_ids or [])
+    st.markdown('<div class="bench-wrap">', unsafe_allow_html=True)
     cols = st.columns(4, gap="small")
     for i, p in enumerate(bench[:4]):
         with cols[i]:
             st.markdown(bench_card(p, p.get("id") in locked_ids), unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def captain_cards(xi):
@@ -376,8 +370,8 @@ with tab5:
 
 with tab6:
     st.header("🧩 Bygg laget rundt mine spillere")
-    st.caption("Start med en tom bane. Trykk **＋** på akkurat den posisjonen du vil fylle, velg spilleren, og la modellen bygge resten av troppen rundt valgene dine.")
-    st.info("Utgangspunkt: **4–4–2**. Banen starter alltid tom, og hvert **＋** åpner kun spillere fra den aktuelle posisjonen.")
+    st.caption("Start med en tom 4–4–2-bane. Trykk **＋** på akkurat den posisjonen du vil fylle, velg spilleren, og la modellen bygge resten av troppen rundt valgene dine.")
+    st.info("Utgangspunkt: **4–4–2**. Keeperen er sentrert, fire forsvarere og fire midtbanespillere ligger i egne linjer, og de to spissene ligger sentrert i angrepsområdet.")
 
     formation = "4-4-2"
     shape = formation_shape(formation)
@@ -403,26 +397,61 @@ with tab6:
 
     with st.container(key="build-pitch"):
         st.markdown('<span class="pitch-anchor"></span>', unsafe_allow_html=True)
-        st.markdown(f'<div class="pitch-title">{formation} · TOM BANE</div>', unsafe_allow_html=True)
-        for pos, label in [("GKP","KEEPER"),("DEF","FORSVAR"),("MID","MIDTBANE"),("FWD","ANGREP")]:
-            st.markdown(f'<div class="pitch-title">{label}</div>', unsafe_allow_html=True)
-            row_keys = [k for k in valid_slots if k.startswith(pos + "_")]
-            cols = st.columns(len(row_keys), gap="small")
-            for i, key in enumerate(row_keys):
+        st.markdown('<div class="pitch-formation">4-4-2 · TOM BANE</div>', unsafe_allow_html=True)
+
+        # Keeper – centered in the pitch.
+        pid = slots.get("GKP_0")
+        gkp = st.columns([1, 2, 1], gap="small")
+        with gkp[1]:
+            if pid is None:
+                if st.button("＋", key="plus_GKP_0"):
+                    st.session_state.build_active_slot = "GKP_0"
+                    st.rerun()
+            else:
+                st.markdown(player_card(PLAYER_LOOKUP[pid], locked=True), unsafe_allow_html=True)
+                if st.button("✕ Fjern", key="remove_GKP_0"):
+                    st.session_state.build_pitch_slots["GKP_0"] = None
+                    st.session_state.build_active_slot = None
+                    st.session_state.pop("build_result", None)
+                    st.rerun()
+
+        # Four defenders – one per lane.
+        for pos in ["DEF", "MID"]:
+            row_keys = [f"{pos}_{i}" for i in range(shape[pos])]
+            cols = st.columns(4, gap="small")
+            for i, slot_key in enumerate(row_keys):
                 with cols[i]:
-                    pid = slots.get(key)
+                    pid = slots.get(slot_key)
                     if pid is None:
-                        if st.button("＋", key=f"plus_{key}"):
-                            st.session_state.build_active_slot = key
+                        if st.button("＋", key=f"plus_{slot_key}"):
+                            st.session_state.build_active_slot = slot_key
                             st.rerun()
-                        st.markdown('<div class="pitch-empty">Trykk + for å velge</div>', unsafe_allow_html=True)
                     else:
                         st.markdown(player_card(PLAYER_LOOKUP[pid], locked=True), unsafe_allow_html=True)
-                        if st.button("✕ Fjern", key=f"remove_{key}", use_container_width=True):
-                            st.session_state.build_pitch_slots[key] = None
+                        if st.button("✕ Fjern", key=f"remove_{slot_key}"):
+                            st.session_state.build_pitch_slots[slot_key] = None
                             st.session_state.build_active_slot = None
                             st.session_state.pop("build_result", None)
                             st.rerun()
+
+        # Two forwards – use the two central lanes of the four-lane grid.
+        row_keys = [f"FWD_{i}" for i in range(shape["FWD"])]
+        cols = st.columns(4, gap="small")
+        for i, col_index in enumerate([1, 2]):
+            with cols[col_index]:
+                slot_key = row_keys[i]
+                pid = slots.get(slot_key)
+                if pid is None:
+                    if st.button("＋", key=f"plus_{slot_key}"):
+                        st.session_state.build_active_slot = slot_key
+                        st.rerun()
+                else:
+                    st.markdown(player_card(PLAYER_LOOKUP[pid], locked=True), unsafe_allow_html=True)
+                    if st.button("✕ Fjern", key=f"remove_{slot_key}"):
+                        st.session_state.build_pitch_slots[slot_key] = None
+                        st.session_state.build_active_slot = None
+                        st.session_state.pop("build_result", None)
+                        st.rerun()
 
     active = st.session_state.build_active_slot
     if active:
