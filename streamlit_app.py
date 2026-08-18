@@ -33,7 +33,7 @@ st.markdown(
 
     /* V2 football-pitch design: only real football-field markings */
     .pitch-anchor { display:none; }
-    div[data-testid="stVerticalBlock"]:has(.pitch-anchor) {
+    .st-key-best-pitch, .st-key-built-pitch, .st-key-build-pitch {
         position:relative;
         overflow:hidden;
         margin:.6rem 0 1.2rem;
@@ -46,7 +46,10 @@ st.markdown(
         box-shadow: inset 0 0 70px rgba(0,0,0,.18), 0 10px 35px rgba(0,0,0,.18);
     }
     .pitch-anchor ~ * { position:relative; z-index:1; }
-    .pitch-title { text-align:center; font-weight:850; letter-spacing:.10em; font-size:.72rem; color:rgba(236,255,241,.78); margin:.45rem 0 .12rem; }
+    .image-wrap { display:inline-flex; align-items:center; justify-content:center; overflow:hidden; border-radius:50%; }
+.image-wrap img { width:100%; height:100%; object-fit:cover; }
+.image-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#20242d; color:rgba(255,255,255,.85); font-weight:800; font-size:.9rem; border:3px solid rgba(255,255,255,.9); }
+.pitch-title { text-align:center; font-weight:850; letter-spacing:.10em; font-size:.72rem; color:rgba(236,255,241,.78); margin:.45rem 0 .12rem; }
     .pitch-empty { text-align:center; color:rgba(236,255,241,.65); font-size:.73rem; margin-top:-.15rem; }
     .player-card { text-align:center; min-height:138px; padding:.35rem .2rem .45rem; }
     .player-card img { width:76px; height:76px; object-fit:cover; border-radius:50%; border:3px solid rgba(255,255,255,.9); background:#20242d; display:inline-block; }
@@ -64,13 +67,13 @@ st.markdown(
     div[data-testid="stMetric"] { padding:.45rem .15rem; }
 
     /* Pitch controls */
-    div[data-testid="stVerticalBlock"]:has(.pitch-anchor) button {
+    .st-key-best-pitch, .st-key-built-pitch, .st-key-build-pitch button {
         border-color:rgba(220,255,228,.28);
         background:rgba(4,45,26,.30);
         color:white;
         border-radius:12px;
     }
-    div[data-testid="stVerticalBlock"]:has(.pitch-anchor) button:hover {
+    .st-key-best-pitch, .st-key-built-pitch, .st-key-build-pitch button:hover {
         border-color:rgba(220,255,228,.60);
         background:rgba(4,45,26,.48);
     }
@@ -106,7 +109,7 @@ def get_analysis():
     df["photo_code"] = df["id"].map(photos).fillna("")
     df["image_url"] = df["photo_code"].map(
         lambda photo: (
-            f"https://resources.premierleague.com/premierleague/photos/players/110x140/p{photo}.png"
+            f"https://resources.premierleague.com/premierleague25/photos/players/110x140/{photo}.png"
             if photo else ""
         )
     )
@@ -162,8 +165,8 @@ def image_tag(p, size=76):
     photo = str(p.get("photo_code", "") or "").strip()
     primary = str(p.get("image_url", "") or "").strip()
     if not primary and photo:
-        primary = f"https://resources.premierleague.com/premierleague/photos/players/110x140/p{photo}.png"
-    fallback = f"https://resources.premierleague.com/premierleague/photos/players/250x250/p{photo}.png" if photo else ""
+        primary = f"https://resources.premierleague.com/premierleague25/photos/players/110x140/{photo}.png"
+    fallback = f"https://resources.premierleague.com/premierleague25/photos/players/500x500/{photo}.png" if photo else ""
     if primary:
         fallback_attr = esc(fallback)
         placeholder = initials(p)
@@ -236,14 +239,14 @@ def player_label(pid):
 PLAYER_LOOKUP = df.set_index("id").to_dict("index")
 
 
-def render_static_pitch(xi, formation, locked_ids=None, title="LAGOPPSTILLING"):
+def render_static_pitch(xi, formation, locked_ids=None, title="LAGOPPSTILLING", key="fpl_static_pitch"): 
     locked_ids = set(locked_ids or [])
     by_pos = {pos: [] for pos in ["GKP", "DEF", "MID", "FWD"]}
     for p in xi:
         by_pos[p["position"]].append(p)
 
     shape = formation_shape(formation)
-    with st.container():
+    with st.container(key=key):
         st.markdown('<span class="pitch-anchor"></span>', unsafe_allow_html=True)
         st.markdown(f'<div class="pitch-title">{title}</div>', unsafe_allow_html=True)
         for pos, label in [("GKP","KEEPER"),("DEF","FORSVAR"),("MID","MIDTBANE"),("FWD","ANGREP")]:
@@ -295,7 +298,7 @@ with tab1:
         m2.metric("Budsjett igjen", f"£{budget-cost:.1f}m")
         m3.metric("Forventede XI-poeng", f"{sum(float(x['expected_gw_points']) for x in xi):.1f}")
         st.subheader("🏟️ Starting XI")
-        render_static_pitch(xi, infer_formation(xi), title="STARTING XI")
+        render_static_pitch(xi, infer_formation(xi), title="STARTING XI", key="best-pitch")
         st.subheader("🪑 Benk")
         render_bench(bench)
         st.subheader("🎯 Kaptein og visekaptein")
@@ -364,7 +367,7 @@ with tab6:
         st.session_state.pop("build_result", None)
         st.rerun()
 
-    with st.container():
+    with st.container(key=key):
         st.markdown('<span class="pitch-anchor"></span>', unsafe_allow_html=True)
         st.markdown(f'<div class="pitch-title">{formation} · TOM BANE</div>', unsafe_allow_html=True)
         for pos, label in [("GKP","KEEPER"),("DEF","FORSVAR"),("MID","MIDTBANE"),("FWD","ANGREP")]:
@@ -450,7 +453,7 @@ with tab6:
                 mm2.metric("Budsjett igjen", f"£{budget-cost:.1f}m")
                 mm3.metric("Forventede XI-poeng", f"{sum(float(p['expected_gw_points']) for p in display_xi):.1f}")
                 st.subheader("🏟️ Ditt lag")
-                render_static_pitch(display_xi, formation, selected_ids, title=f"{formation} · DITT LAG")
+                render_static_pitch(display_xi, formation, selected_ids, title=f"{formation} · DITT LAG", key="built-pitch")
                 st.subheader("🪑 Benk")
                 render_bench(bench, selected_ids)
                 st.subheader("🎯 Kaptein og visekaptein")
