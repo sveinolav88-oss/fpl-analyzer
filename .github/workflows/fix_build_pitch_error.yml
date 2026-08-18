@@ -1,0 +1,45 @@
+name: Fix build pitch error
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fix undefined container key
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('streamlit_app.py')
+          s = p.read_text(encoding='utf-8')
+          old = '    with st.container(key=key):\n        st.markdown(\'<span class="pitch-anchor"></span>\', unsafe_allow_html=True)\n        st.markdown(f\'<div class="pitch-title">{formation} · TOM BANE</div>\', unsafe_allow_html=True)'
+          new = '    with st.container(key="build-pitch"):\n        st.markdown(\'<span class="pitch-anchor"></span>\', unsafe_allow_html=True)\n        st.markdown(f\'<div class="pitch-title">{formation} · TOM BANE</div>\', unsafe_allow_html=True)'
+          if old not in s:
+              raise SystemExit('Expected build-pitch block not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add streamlit_app.py
+          git diff --cached --quiet && exit 0
+          git commit -m "Fix build-around pitch container key"
+          git push
+
+      - name: Remove temporary workflow
+        if: success()
+        run: |
+          rm -f .github/workflows/fix_build_pitch_error.yml
+          git add .github/workflows/fix_build_pitch_error.yml
+          git commit -m "Remove temporary build pitch fix workflow"
+          git push
