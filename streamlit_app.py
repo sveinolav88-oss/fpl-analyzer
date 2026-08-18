@@ -47,9 +47,9 @@ st.markdown(
     }
     .pitch-anchor ~ * { position:relative; z-index:1; }
     .image-wrap { display:inline-flex; align-items:center; justify-content:center; overflow:hidden; border-radius:50%; }
-.image-wrap img { width:100%; height:100%; object-fit:cover; }
-.image-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#20242d; color:rgba(255,255,255,.85); font-weight:800; font-size:.9rem; border:3px solid rgba(255,255,255,.9); }
-.pitch-title { text-align:center; font-weight:850; letter-spacing:.10em; font-size:.72rem; color:rgba(236,255,241,.78); margin:.45rem 0 .12rem; }
+    .image-wrap img { width:100%; height:100%; object-fit:cover; }
+    .image-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#20242d; color:rgba(255,255,255,.85); font-weight:800; font-size:.9rem; border:3px solid rgba(255,255,255,.9); }
+    .pitch-title { text-align:center; font-weight:850; letter-spacing:.10em; font-size:.72rem; color:rgba(236,255,241,.78); margin:.45rem 0 .12rem; }
     .pitch-empty { text-align:center; color:rgba(236,255,241,.65); font-size:.73rem; margin-top:-.15rem; }
     .player-card { text-align:center; min-height:138px; padding:.35rem .2rem .45rem; }
     .player-card img { width:76px; height:76px; object-fit:cover; border-radius:50%; border:3px solid rgba(255,255,255,.9); background:#20242d; display:inline-block; }
@@ -76,6 +76,40 @@ st.markdown(
     .st-key-best-pitch, .st-key-built-pitch, .st-key-build-pitch button:hover {
         border-color:rgba(220,255,228,.60);
         background:rgba(4,45,26,.48);
+    }
+
+    /* Bygg rundt mine spillere: kompakte, like store sirkler for tomme posisjoner */
+    [class*="st-key-plus_"] {
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        min-height:74px;
+    }
+    [class*="st-key-plus_"] button {
+        width:68px !important;
+        min-width:68px !important;
+        max-width:68px !important;
+        height:68px !important;
+        min-height:68px !important;
+        max-height:68px !important;
+        padding:0 !important;
+        margin:0 auto !important;
+        border-radius:50% !important;
+        border:2px solid rgba(220,255,228,.32) !important;
+        background:rgba(8,35,22,.78) !important;
+        color:rgba(255,255,255,.95) !important;
+        font-size:1.45rem !important;
+        line-height:1 !important;
+        box-shadow:inset 0 0 16px rgba(0,0,0,.20), 0 4px 12px rgba(0,0,0,.14);
+        transition:all .15s ease;
+    }
+    [class*="st-key-plus_"] button:hover {
+        border-color:rgba(235,255,240,.72) !important;
+        background:rgba(8,35,22,.96) !important;
+        transform:scale(1.06);
+    }
+    [class*="st-key-plus_"] + .pitch-empty {
+        margin-top:.05rem;
     }
     </style>
     """,
@@ -239,7 +273,7 @@ def player_label(pid):
 PLAYER_LOOKUP = df.set_index("id").to_dict("index")
 
 
-def render_static_pitch(xi, formation, locked_ids=None, title="LAGOPPSTILLING", key="fpl_static_pitch"): 
+def render_static_pitch(xi, formation, locked_ids=None, title="LAGOPPSTILLING", key="fpl_static_pitch"):
     locked_ids = set(locked_ids or [])
     by_pos = {pos: [] for pos in ["GKP", "DEF", "MID", "FWD"]}
     for p in xi:
@@ -378,7 +412,7 @@ with tab6:
                 with cols[i]:
                     pid = slots.get(key)
                     if pid is None:
-                        if st.button("＋", key=f"plus_{key}", use_container_width=True):
+                        if st.button("＋", key=f"plus_{key}"):
                             st.session_state.build_active_slot = key
                             st.rerun()
                         st.markdown('<div class="pitch-empty">Trykk + for å velge</div>', unsafe_allow_html=True)
