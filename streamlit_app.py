@@ -171,29 +171,29 @@ top_player = df.sort_values("expected_gw_points", ascending=False).iloc[0]
 
 c1, c2, c3, c4 = st.columns(4)
 
-with ...:
+with c1:
     st.metric(
-"Spillere analysert",
-f"{players_count}",
-)
+        "Spillere analysert",
+        f"{players_count}",
+    )
 
-    with c2:
-st.metric(
-"Snitt forventede poeng",
-f"{avg_points:.2f}",
-)
+with c2:
+    st.metric(
+        "Snitt forventede poeng",
+        f"{avg_points:.2f}",
+    )
 
 with c3:
-st.metric(
-"Beste projeksjon",
-f"{top_player['name']}",
-)
+    st.metric(
+        "Beste projeksjon",
+        f"{top_player['name']}",
+    )
 
 with c4:
-st.metric(
-"Forventede poeng",
-f"{top_player['expected_gw_points']:.2f}",
-)
+    st.metric(
+        "Forventede poeng",
+        f"{top_player['expected_gw_points']:.2f}",
+    )
 
 #---------------------------------------------------------
 
