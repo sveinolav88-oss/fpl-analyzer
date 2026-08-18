@@ -7,6 +7,7 @@ from main import (
     build_players,
     assign_recommendations,
     select_squad,
+    build_around_players,
 )
 
 # =========================================================
@@ -186,13 +187,14 @@ with c4:
 # TABS
 # =========================================================
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "🏆 Beste lag",
         "🔄 Transfers",
         "©️ Kapteiner",
         "🔥 Differentials",
         "💰 Best value",
+        "🧩 Bygg rundt mine spillere",
     ]
 )
 
@@ -486,6 +488,288 @@ with tab5:
         use_container_width=True,
         hide_index=True,
     )
+
+# =========================================================
+# BUILD AROUND MY PLAYERS
+# =========================================================
+
+with tab6:
+    st.header("🧩 Bygg laget rundt mine spillere")
+    st.caption(
+        "Velg spillerne du absolutt vil ha. De låses, og modellen finner "
+        "de beste resterende spillerne innenfor budsjett og FPL-reglene."
+    )
+
+    # Player IDs are used as the actual widget values. The label contains
+    # enough context to make players easy to distinguish while selecting.
+    player_lookup = (
+        df.set_index("id")
+        .to_dict("index")
+    )
+
+    player_ids = df["id"].tolist()
+
+    def player_label(player_id):
+        p = player_lookup.get(player_id, {})
+        return (
+            f"{p.get('name', '?')} · "
+            f"{p.get('team_name', '?')} · "
+            f"{p.get('position', '?')} · "
+            f"£{p.get('price', 0):.1f}m"
+        )
+
+    selected_ids = st.multiselect(
+        "🔒 Velg spillerne du vil bygge laget rundt",
+        options=player_ids,
+        format_func=player_label,
+        key="build_around_players",
+        help="Du kan velge hvem du vil. Modellen låser disse spillerne og optimaliserer resten.",
+    )
+
+    if selected_ids:
+        selected_df = df[df["id"].isin(selected_ids)].copy()
+        selected_cost = float(selected_df["price"].sum())
+        remaining_budget = budget - selected_cost
+
+        st.markdown("### 🔒 Dine låste spillere")
+
+        selected_cols = [
+            "name",
+            "team_name",
+            "position",
+            "price",
+            "expected_minutes",
+            "expected_gw_points",
+            "xgi90",
+            "fixture_next3",
+        ]
+        selected_cols = [c for c in selected_cols if c in selected_df.columns]
+
+        st.dataframe(
+            selected_df[selected_cols].sort_values(
+                ["position", "expected_gw_points"],
+                ascending=[True, False],
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.metric("Låste spillere", f"{len(selected_df)}")
+        with m2:
+            st.metric("Kostnad låste", f"£{selected_cost:.1f}m")
+        with m3:
+            st.metric("Budsjett igjen", f"£{remaining_budget:.1f}m")
+
+        # Give immediate feedback before the optimizer runs.
+        position_limits = {
+            "GKP": 2,
+            "DEF": 5,
+            "MID": 5,
+            "FWD": 3,
+        }
+
+        position_counts = selected_df["position"].value_counts().to_dict()
+        club_counts = selected_df["team_id"].value_counts().to_dict()
+
+        invalid_reasons = []
+
+        if len(selected_df) > 15:
+            invalid_reasons.append("Du kan maksimalt låse 15 spillere.")
+
+        if selected_cost > budget + 1e-9:
+            invalid_reasons.append(
+                f"De låste spillerne koster £{selected_cost:.1f}m, "
+                f"som er over budsjettet på £{budget:.1f}m."
+            )
+
+        for pos, limit in position_limits.items():
+            count = position_counts.get(pos, 0)
+            if count > limit:
+                invalid_reasons.append(
+                    f"Du har valgt {count} {pos}-spillere, men maksgrensen er {limit}."
+                )
+
+        if club_counts and max(club_counts.values()) > 3:
+            invalid_reasons.append(
+                "Du har valgt mer enn 3 spillere fra samme klubb."
+            )
+
+        if invalid_reasons:
+            for reason in invalid_reasons:
+                st.warning(reason)
+        else:
+            st.write(
+                "Når du trykker på knappen under, beholder modellen disse spillerne "
+                "og optimaliserer alle resterende plasser."
+            )
+
+        build_button = st.button(
+            "🧩 Bygg laget rundt mine spillere",
+            type="primary",
+            use_container_width=True,
+            disabled=bool(invalid_reasons),
+        )
+
+        if build_button:
+            with st.spinner("Bygger laget rundt dine spillere..."):
+                around_result = build_around_players(
+                    df,
+                    selected_ids,
+                    budget,
+                )
+
+            if around_result:
+                score, cost, squad, xi, bench = around_result
+                locked_set = set(selected_ids)
+
+                st.success(
+                    "Laget er bygget rundt dine valgte spillere. "
+                    "De låste spillerne er beholdt, og resten er optimalisert av modellen."
+                )
+
+                xi_points = sum(
+                    float(x["expected_gw_points"])
+                    for x in xi
+                )
+
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    st.metric("Troppskostnad", f"£{cost:.1f}m")
+                with m2:
+                    st.metric("Budsjett igjen", f"£{budget - cost:.1f}m")
+                with m3:
+                    st.metric("Forventede XI-poeng", f"{xi_points:.1f}")
+
+                # ------------------------------------------------
+                # Starting XI
+                # ------------------------------------------------
+                st.subheader("🏆 Ditt lag")
+                st.caption(
+                    "🔒 = spiller du valgte selv · 🤖 = spiller modellen har valgt"
+                )
+
+                xi_display = pd.DataFrame(xi).copy()
+                xi_display["valg"] = xi_display["id"].apply(
+                    lambda x: "🔒 Låst" if x in locked_set else "🤖 Modell"
+                )
+
+                xi_cols = [
+                    "valg",
+                    "name",
+                    "team_name",
+                    "position",
+                    "price",
+                    "expected_minutes",
+                    "expected_gw_points",
+                    "value",
+                    "xgi90",
+                    "fixture_next3",
+                ]
+                xi_cols = [c for c in xi_cols if c in xi_display.columns]
+
+                st.dataframe(
+                    xi_display[xi_cols],
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+                # ------------------------------------------------
+                # Bench
+                # ------------------------------------------------
+                st.subheader("Bench")
+
+                bench_display = pd.DataFrame(bench).copy()
+                bench_display["valg"] = bench_display["id"].apply(
+                    lambda x: "🔒 Låst" if x in locked_set else "🤖 Modell"
+                )
+
+                bench_cols = [
+                    "valg",
+                    "name",
+                    "team_name",
+                    "position",
+                    "price",
+                    "expected_minutes",
+                    "expected_gw_points",
+                    "value",
+                ]
+                bench_cols = [c for c in bench_cols if c in bench_display.columns]
+
+                st.dataframe(
+                    bench_display[bench_cols],
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+                # ------------------------------------------------
+                # Captain / vice-captain
+                # ------------------------------------------------
+                cap = max(
+                    xi,
+                    key=lambda x: x["captain_score"],
+                )
+                vice_pool = [
+                    x for x in xi
+                    if x["id"] != cap["id"]
+                ]
+                vice = max(
+                    vice_pool,
+                    key=lambda x: x["captain_score"],
+                )
+
+                st.subheader("🎯 Kaptein og visekaptein")
+
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown(
+                        f"""
+                        <div class="section-card">
+                            <div class="muted">KAPTEIN</div>
+                            <div class="player-name">
+                                {cap["name"]} · {cap["position"]}
+                            </div>
+                            <div>
+                                Forventet: {cap["expected_gw_points"]:.2f} poeng
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                with c2:
+                    st.markdown(
+                        f"""
+                        <div class="section-card">
+                            <div class="muted">VICE-CAPTAIN</div>
+                            <div class="player-name">
+                                {vice["name"]} · {vice["position"]}
+                            </div>
+                            <div>
+                                Forventet: {vice["expected_gw_points"]:.2f} poeng
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                with st.expander("🔎 Vis optimaliseringsdetaljer"):
+                    st.write(f"Squad objective: **{score:.2f}**")
+                    st.write("Struktur: **2 GKP / 5 DEF / 5 MID / 3 FWD**")
+                    st.write("Maksimalt 3 spillere fra samme klubb.")
+            else:
+                st.error(
+                    "Modellen fant ikke en gyldig 15-mannstropp rundt disse spillerne "
+                    "innenfor budsjett og FPL-reglene. Prøv å låse færre spillere "
+                    "eller velg en annen kombinasjon."
+                )
+    else:
+        st.info(
+            "Velg én eller flere spillere ovenfor. Du kan for eksempel låse "
+            "Haaland + Bruno Fernandes + en valgfri spiller, og la modellen "
+            "bygge resten av laget rundt dem."
+        )
 
 # =========================================================
 # FOOTER
