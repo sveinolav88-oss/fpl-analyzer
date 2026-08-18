@@ -1,115 +1,116 @@
 import streamlit as st
 import pandas as pd
-import time
 
 from main import (
-load_fpl,
-load_fixtures,
-build_players,
-assign_recommendations,
-select_squad,
+    load_fpl,
+    load_fixtures,
+    build_players,
+    assign_recommendations,
+    select_squad,
 )
 
-#---------------------------------------------------------
-#PAGE CONFIG
-#---------------------------------------------------------
+# =========================================================
+# PAGE CONFIG
+# =========================================================
 
 st.set_page_config(
-page_title="FPL Analyzer",
-page_icon="⚽",
-layout="wide",
-initial_sidebar_state="expanded",
+    page_title="FPL Analyzer",
+    page_icon="⚽",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-#---------------------------------------------------------
-
-#CUSTOM CSS
-
-#---------------------------------------------------------
+# =========================================================
+# STYLE
+# =========================================================
 
 st.markdown(
-"""
-<style>
+    """
+    <style>
+    .block-container {
+        max-width: 1500px;
+        padding-top: 1.5rem;
+        padding-bottom: 3rem;
+    }
 
-.main {
-    padding-top: 1rem;
-}
+    .hero {
+        padding: 1.8rem 2rem;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #111827, #1f2937);
+        color: white;
+        margin-bottom: 1.4rem;
+        border: 1px solid rgba(255,255,255,0.08);
+    }
 
-.block-container {
-    max-width: 1450px;
-    padding-top: 2rem;
-}
+    .hero h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        line-height: 1.1;
+    }
 
-.hero {
-    padding: 1.5rem 1.8rem;
-    border-radius: 18px;
-    background: linear-gradient(135deg, #111827, #1f2937);
-    color: white;
-    margin-bottom: 1.5rem;
-}
+    .hero p {
+        margin: .5rem 0 0;
+        opacity: .75;
+        font-size: 1rem;
+    }
 
-.hero h1 {
-    margin-bottom: 0.2rem;
-    font-size: 2.4rem;
-}
+    .section-card {
+        padding: 1rem 1.2rem;
+        border-radius: 16px;
+        border: 1px solid rgba(128,128,128,.22);
+        background: rgba(128,128,128,.04);
+        margin-bottom: 1rem;
+    }
 
-.hero p {
-    margin: 0;
-    opacity: 0.75;
-    font-size: 1rem;
-}
+    .player-name {
+        font-weight: 750;
+        font-size: 1.1rem;
+    }
 
-.card {
-    padding: 1rem;
-    border-radius: 14px;
-    border: 1px solid rgba(128,128,128,0.25);
-    background: rgba(128,128,128,0.05);
-}
+    .muted {
+        opacity: .68;
+        font-size: .86rem;
+    }
 
-.player-name {
-    font-weight: 700;
-    font-size: 1.05rem;
-}
+    .recommend-buy {
+        font-weight: 800;
+    }
 
-.small-muted {
-    opacity: 0.65;
-    font-size: 0.85rem;
-}
-
-</style>
-""",
-unsafe_allow_html=True,
-
+    div[data-testid="stMetric"] {
+        padding: .55rem .2rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
-#---------------------------------------------------------
-#HEADER
-#---------------------------------------------------------
+# =========================================================
+# HEADER
+# =========================================================
 
 st.markdown(
-"""
-<div class="hero">
-<h1>⚽ FPL Analyzer</h1>
-<p>Live Fantasy Premier League analysis • Transfers • Captains • Differentials • Best XI</p>
-</div>
-""",
-unsafe_allow_html=True,
+    """
+    <div class="hero">
+        <h1>⚽ FPL Analyzer</h1>
+        <p>
+            Live Fantasy Premier League analysis · Optimal squad · Transfers ·
+            Captains · Differentials · Value
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
-#---------------------------------------------------------
-
-#LOAD DATA
-
-#---------------------------------------------------------
+# =========================================================
+# DATA
+# =========================================================
 
 @st.cache_data(ttl=900)
 def get_analysis():
     data, teams, raw_players = load_fpl()
     fixtures = load_fixtures()
-
     df = build_players(raw_players, teams, fixtures)
     df = assign_recommendations(df)
-
     return df, teams
 
 
@@ -117,20 +118,20 @@ with st.spinner("Henter ferske FPL-data..."):
     try:
         df, teams = get_analysis()
         data_loaded = True
-    except Exception as e:
+    except Exception as exc:
         data_loaded = False
-        st.error(f"Kunne ikke hente FPL-data: {e}")
+        st.error(f"Kunne ikke hente FPL-data: {exc}")
 
-#---------------------------------------------------------
 
-#SIDEBAR
+# =========================================================
+# SIDEBAR
+# =========================================================
 
-#---------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ Innstillinger")
 
     budget = st.number_input(
-        "Budsjett (€m)",
+        "Budsjett (£m)",
         min_value=80.0,
         max_value=100.0,
         value=100.0,
@@ -144,87 +145,71 @@ with st.sidebar:
         value=10,
     )
 
+    st.divider()
 
-st.divider()
+    if st.button("🔄 Oppdater FPL-data", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
 
-if st.button("🔄 Oppdater FPL-data", use_container_width=True):
-    st.cache_data.clear()
-    st.rerun()
+    st.divider()
+    st.caption("FPL Analyzer")
+    st.caption("Live data fra Fantasy Premier League API")
+    st.caption("Data cache: 15 minutter")
 
-st.divider()
-
-st.caption("FPL Analyzer")
-st.caption("Live data fra Fantasy Premier League API")
 
 if not data_loaded:
     st.stop()
 
-#---------------------------------------------------------
-
-#TOP METRICS
-
-#---------------------------------------------------------
+# =========================================================
+# TOP METRICS
+# =========================================================
 
 players_count = len(df)
-avg_points = df["expected_gw_points"].mean()
+avg_points = float(df["expected_gw_points"].mean())
 top_player = df.sort_values("expected_gw_points", ascending=False).iloc[0]
 
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
-    st.metric(
-        "Spillere analysert",
-        f"{players_count}",
-    )
+    st.metric("Spillere analysert", f"{players_count}")
 
 with c2:
-    st.metric(
-        "Snitt forventede poeng",
-        f"{avg_points:.2f}",
-    )
+    st.metric("Snitt forventede poeng", f"{avg_points:.2f}")
 
 with c3:
-    st.metric(
-        "Beste projeksjon",
-        f"{top_player['name']}",
-    )
+    st.metric("Beste projeksjon", str(top_player["name"]))
 
 with c4:
-    st.metric(
-        "Forventede poeng",
-        f"{top_player['expected_gw_points']:.2f}",
-    )
+    st.metric("Forventede poeng", f"{top_player['expected_gw_points']:.2f}")
 
-#---------------------------------------------------------
-
-#TABS
-
-#---------------------------------------------------------
+# =========================================================
+# TABS
+# =========================================================
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(
-[
-"🏆 Beste lag",
-"🔄 Transfers",
-"©️ Kapteiner",
-"🔥 Differentials",
-"💰 Best value",
-]
+    [
+        "🏆 Beste lag",
+        "🔄 Transfers",
+        "©️ Kapteiner",
+        "🔥 Differentials",
+        "💰 Best value",
+    ]
 )
 
-#=========================================================
-
-#BEST SQUAD
-
-#=========================================================
+# =========================================================
+# BEST SQUAD
+# =========================================================
 
 with tab1:
     st.header("🏆 Beste 15-mannstropp")
+    st.caption(
+        "Optimaliseres innenfor budsjett, FPL-struktur og klubbbegrensning."
+    )
 
     with st.spinner("Optimaliserer troppen..."):
         result = select_squad(df, budget)
 
     if result:
-
         score, cost, squad, xi, bench = result
 
         m1, m2, m3 = st.columns(3)
@@ -236,38 +221,29 @@ with tab1:
             st.metric("Budsjett igjen", f"£{budget - cost:.1f}m")
 
         with m3:
-            st.metric("Forventede XI-poeng", f"{sum(x['expected_gw_points'] for x in xi):.1f}")
+            xi_points = sum(float(x["expected_gw_points"]) for x in xi)
+            st.metric("Forventede XI-poeng", f"{xi_points:.1f}")
 
-        st.subheader("Starting XI")
-
-        xi_df = pd.DataFrame(xi)
-
-        # Captain
+        # Captain selection is deliberately based on captain_score,
+        # not transfer score, value or ownership.
         cap = max(xi, key=lambda x: x["captain_score"])
+        vice_pool = [x for x in xi if x["id"] != cap["id"]]
+        vice = max(vice_pool, key=lambda x: x["captain_score"])
 
-        vice_candidates = [
-            x for x in xi
-            if x["id"] != cap["id"]
-        ]
+        st.subheader("🎯 Kaptein og visekaptein")
 
-        vice = max(
-            vice_candidates,
-            key=lambda x: x["captain_score"]
-        )
-
-        # Captain cards
         c1, c2 = st.columns(2)
 
         with c1:
             st.markdown(
                 f"""
-                <div class="card">
-                    <div class="small-muted">© KAPTEIN</div>
+                <div class="section-card">
+                    <div class="muted">KAPTEIN</div>
                     <div class="player-name">
-                        {cap['name']} ({cap['position']})
+                        {cap["name"]} · {cap["position"]}
                     </div>
                     <div>
-                        Forventet: {cap['expected_gw_points']:.2f} poeng
+                        Forventet: {cap["expected_gw_points"]:.2f} poeng
                     </div>
                 </div>
                 """,
@@ -277,13 +253,13 @@ with tab1:
         with c2:
             st.markdown(
                 f"""
-                <div class="card">
-                    <div class="small-muted">VICE-CAPTAIN</div>
+                <div class="section-card">
+                    <div class="muted">VICE-CAPTAIN</div>
                     <div class="player-name">
-                        {vice['name']} ({vice['position']})
+                        {vice["name"]} · {vice["position"]}
                     </div>
                     <div>
-                        Forventet: {vice['expected_gw_points']:.2f} poeng
+                        Forventet: {vice["expected_gw_points"]:.2f} poeng
                     </div>
                 </div>
                 """,
@@ -292,7 +268,8 @@ with tab1:
 
         st.subheader("Starting XI")
 
-        show_cols = [
+        xi_df = pd.DataFrame(xi)
+        xi_cols = [
             "name",
             "team_name",
             "position",
@@ -301,9 +278,10 @@ with tab1:
             "expected_gw_points",
             "captain_score",
         ]
+        xi_cols = [c for c in xi_cols if c in xi_df.columns]
 
         st.dataframe(
-            xi_df[show_cols],
+            xi_df[xi_cols],
             use_container_width=True,
             hide_index=True,
         )
@@ -311,120 +289,137 @@ with tab1:
         st.subheader("Bench")
 
         bench_df = pd.DataFrame(bench)
+        bench_cols = [
+            "name",
+            "team_name",
+            "position",
+            "price",
+            "expected_minutes",
+            "expected_gw_points",
+        ]
+        bench_cols = [c for c in bench_cols if c in bench_df.columns]
 
         st.dataframe(
-            bench_df[
-                [
-                    "name",
-                    "team_name",
-                    "position",
-                    "price",
-                    "expected_minutes",
-                    "expected_gw_points",
-                ]
-            ],
+            bench_df[bench_cols],
             use_container_width=True,
             hide_index=True,
         )
 
+        with st.expander("🔎 Vis optimaliseringsdetaljer"):
+            st.write(f"Squad objective: **{score:.2f}**")
+            st.write("Struktur: **2 GKP / 5 DEF / 5 MID / 3 FWD**")
+            st.write("Maksimalt 3 spillere fra samme klubb.")
+
     else:
-        st.error("Fant ingen gyldig FPL-tropp.")
+        st.error("Fant ingen gyldig FPL-tropp innenfor budsjettet.")
 
-    #=========================================================
-
-#TRANSFERS
-
-#=========================================================
+# =========================================================
+# TRANSFERS
+# =========================================================
 
 with tab2:
-
     st.header("🔄 Beste transfermål")
+    st.caption("Rangert etter modellens transfer-score.")
+
+    positions = ["GKP", "DEF", "MID", "FWD"]
 
     position_filter = st.multiselect(
         "Posisjon",
-        ["GKP", "DEF", "MID", "FWD"],
-        default=["GKP", "DEF", "MID", "FWD"],
+        positions,
+        default=positions,
+    )
+
+    min_minutes = st.slider(
+        "Minimum forventede minutter",
+        min_value=0,
+        max_value=90,
+        value=60,
+        step=5,
     )
 
     transfer_df = df[
         df["position"].isin(position_filter)
+        & (df["expected_minutes"] >= min_minutes)
     ].copy()
 
     transfer_df = transfer_df.sort_values(
-        "transfer_score",
+        ["transfer_score", "expected_gw_points"],
         ascending=False,
     ).head(30)
 
+    transfer_cols = [
+        "name",
+        "team_name",
+        "position",
+        "price",
+        "ownership",
+        "expected_minutes",
+        "expected_gw_points",
+        "value",
+        "fixture_next3",
+        "transfer_score",
+        "recommendation",
+    ]
+    transfer_cols = [c for c in transfer_cols if c in transfer_df.columns]
+
     st.dataframe(
-        transfer_df[
-            [
-                "name",
-                "team_name",
-                "position",
-                "price",
-                "ownership",
-                "expected_minutes",
-                "expected_gw_points",
-                "value",
-                "fixture_next3",
-                "transfer_score",
-                "recommendation",
-            ]
-        ],
+        transfer_df[transfer_cols],
         use_container_width=True,
         hide_index=True,
     )
 
-    #=========================================================
-
-    #CAPTAINS
-
-    #=========================================================
+# =========================================================
+# CAPTAINS
+# =========================================================
 
 with tab3:
-
     st.header("©️ Kapteinguide")
-
-    st.info(
-        "Kapteinmodellen prioriterer forventede poeng, spilletid, "
-        "posisjon og fixture. Eierskap og pris påvirker ikke kapteinvalget."
+    st.caption(
+        "Kapteinvalget skal prioritere forventede poeng, spilletid og fixture. "
+        "Pris og eierskap brukes ikke som kapteinssignaler."
     )
 
-    captain_df = df[
-        df["expected_minutes"] >= 60
-    ].copy()
+    captain_df = df[df["expected_minutes"] >= 60].copy()
 
     captain_df = captain_df.sort_values(
         ["captain_score", "expected_gw_points"],
         ascending=False,
     ).head(20)
 
+    if len(captain_df):
+        top_cap = captain_df.iloc[0]
+        st.success(
+            f"🥇 Førstevalg: **{top_cap['name']}** · "
+            f"{top_cap['expected_gw_points']:.2f} forventede poeng"
+        )
+
+    captain_cols = [
+        "name",
+        "team_name",
+        "position",
+        "price",
+        "expected_minutes",
+        "expected_gw_points",
+        "fixture_next3",
+        "captain_score",
+    ]
+    captain_cols = [c for c in captain_cols if c in captain_df.columns]
+
     st.dataframe(
-        captain_df[
-            [
-                "name",
-                "team_name",
-                "position",
-                "price",
-                "expected_minutes",
-                "expected_gw_points",
-                "fixture_next3",
-                "captain_score",
-            ]
-        ],
+        captain_df[captain_cols],
         use_container_width=True,
         hide_index=True,
     )
 
-    #=========================================================
-
-    #DIFFERENTIALS
-
-    #=========================================================
+# =========================================================
+# DIFFERENTIALS
+# =========================================================
 
 with tab4:
-
     st.header("🔥 Differentials")
+    st.caption(
+        "Spillere med lavere eierskap og tilstrekkelig forventet spilletid."
+    )
 
     differential_df = df[
         (df["ownership"] <= ownership_limit)
@@ -432,73 +427,72 @@ with tab4:
     ].copy()
 
     differential_df = differential_df.sort_values(
-        "differential_score",
+        ["differential_score", "expected_gw_points"],
         ascending=False,
     ).head(30)
 
+    differential_cols = [
+        "name",
+        "team_name",
+        "position",
+        "price",
+        "ownership",
+        "expected_minutes",
+        "expected_gw_points",
+        "value",
+        "fixture_next3",
+        "differential_score",
+    ]
+    differential_cols = [
+        c for c in differential_cols if c in differential_df.columns
+    ]
+
     st.dataframe(
-        differential_df[
-            [
-                "name",
-                "team_name",
-                "position",
-                "price",
-                "ownership",
-                "expected_minutes",
-                "expected_gw_points",
-                "value",
-                "fixture_next3",
-                "differential_score",
-            ]
-        ],
+        differential_df[differential_cols],
         use_container_width=True,
         hide_index=True,
     )
 
-    #=========================================================
-
-    #BEST VALUE
-
-    #=========================================================
+# =========================================================
+# VALUE
+# =========================================================
 
 with tab5:
-
     st.header("💰 Best value")
+    st.caption("Forventede poeng per £m, slik modellen beregner value.")
 
     value_df = df[
         df["expected_minutes"] >= 60
-    ].copy()
-
-    value_df = value_df.sort_values(
-        "value",
+    ].sort_values(
+        ["value", "expected_gw_points"],
         ascending=False,
     ).head(30)
 
+    value_cols = [
+        "name",
+        "team_name",
+        "position",
+        "price",
+        "ownership",
+        "expected_minutes",
+        "expected_gw_points",
+        "value",
+        "fixture_next3",
+    ]
+    value_cols = [c for c in value_cols if c in value_df.columns]
+
     st.dataframe(
-        value_df[
-            [
-                "name",
-                "team_name",
-                "position",
-                "price",
-                "expected_minutes",
-                "expected_gw_points",
-                "value",
-                "fixture_next3",
-            ]
-        ],
+        value_df[value_cols],
         use_container_width=True,
         hide_index=True,
     )
 
-    #---------------------------------------------------------
-
-    #FOOTER
-
-#---------------------------------------------------------
+# =========================================================
+# FOOTER
+# =========================================================
 
 st.divider()
-
 st.caption(
-"FPL Analyzer • Live FPL data • Analysis model V1.7"
+    "FPL Analyzer · Live FPL-data · Analysemodell og anbefalinger er "
+    "modellbaserte estimater, ikke garantier."
 )
