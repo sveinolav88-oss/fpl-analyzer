@@ -14,7 +14,6 @@ from main import (
 )
 from pitch_builder import build_display_xi
 
-
 st.set_page_config(
     page_title="FPL Analyzer",
     page_icon="⚽",
@@ -29,40 +28,30 @@ st.markdown(
     .hero { padding: 1.7rem 2rem; border-radius: 20px; background: linear-gradient(135deg,#111827,#1f2937); color:white; margin-bottom:1.2rem; border:1px solid rgba(255,255,255,.08); }
     .hero h1 { margin:0; font-size:2.45rem; line-height:1.1; }
     .hero p { margin:.5rem 0 0; opacity:.75; }
-    .section-card { padding:1rem 1.2rem; border-radius:16px; border:1px solid rgba(128,128,128,.22); background:rgba(128,128,128,.04); margin-bottom:1rem; }
 
-    /* Football pitch – clean V2 design */
+    /* Clean football-pitch design */
     .pitch-anchor { display:none; }
     .st-key-best-pitch, .st-key-built-pitch, .st-key-build-pitch {
         position:relative;
         overflow:hidden;
         margin:.6rem 0 1.25rem;
-        padding:1.25rem .8rem 1rem;
+        padding:1.15rem .75rem 1rem;
         border-radius:26px;
         border:1px solid rgba(155,235,178,.24);
         background-color:#1f6b3d;
-        background-image:url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 1000 650' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='white' stroke-opacity='.28' stroke-width='2'%3E%3Crect x='12' y='12' width='976' height='626'/%3E%3Cline x1='12' y1='325' x2='988' y2='325'/%3E%3Ccircle cx='500' cy='325' r='72'/%3E%3Cline x1='350' y1='12' x2='350' y2='145'/%3E%3Cline x1='650' y1='12' x2='650' y2='145'/%3E%3Cline x1='350' y1='145' x2='650' y2='145'/%3E%3Cline x1='425' y1='12' x2='425' y2='70'/%3E%3Cline x1='575' y1='12' x2='575' y2='70'/%3E%3Cline x1='425' y1='70' x2='575' y2='70'/%3E%3Cline x1='350' y1='638' x2='350' y2='505'/%3E%3Cline x1='650' y1='638' x2='650' y2='505'/%3E%3Cline x1='350' y1='505' x2='650' y2='505'/%3E%3Cline x1='425' y1='638' x2='425' y2='580'/%3E%3Cline x1='575' y1='638' x2='575' y2='580'/%3E%3Cline x1='425' y1='580' x2='575' y2='580'/%3E%3C/g%3E%3Cg fill='white' fill-opacity='.25'%3E%3Ccircle cx='500' cy='325' r='3'/%3E%3Ccircle cx='500' cy='95' r='3'/%3E%3Ccircle cx='500' cy='555' r='3'/%3E%3C/g%3E%3C/svg%3E");
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 1000 650' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='white' stroke-opacity='.25' stroke-width='2'%3E%3Crect x='12' y='12' width='976' height='626' rx='2'/%3E%3Cline x1='12' y1='325' x2='988' y2='325'/%3E%3Ccircle cx='500' cy='325' r='72'/%3E%3Cpath d='M350 12v133h300V12M350 638V505h300v133M425 12v58h150V12M425 638v-58h150v58'/%3E%3C/g%3E%3Cg fill='white' fill-opacity='.22'%3E%3Ccircle cx='500' cy='325' r='3'/%3E%3C/g%3E%3C/svg%3E");
         background-size:100% 100%;
         box-shadow: inset 0 0 70px rgba(0,0,0,.18), 0 10px 35px rgba(0,0,0,.18);
     }
-    .pitch-anchor ~ * { position:relative; z-index:1; }
-    .pitch-layout { display:flex; flex-direction:column; gap:.1rem; }
-    .pitch-row { width:100%; }
-    .pitch-row-gkp { margin-top:.1rem; margin-bottom:1.1rem; }
-    .pitch-row-def { margin-bottom:1.0rem; }
-    .pitch-row-mid { margin-bottom:1.0rem; }
-    .pitch-row-fwd { margin-bottom:.15rem; }
-    .pitch-row-label { text-align:center; font-weight:850; letter-spacing:.10em; font-size:.68rem; color:rgba(236,255,241,.62); margin:.05rem 0 .2rem; }
-    .pitch-formation { text-align:center; font-weight:850; letter-spacing:.12em; font-size:.68rem; color:rgba(236,255,241,.68); margin:0 0 .5rem; }
+    .pitch-formation { text-align:center; font-weight:850; letter-spacing:.12em; font-size:.68rem; color:rgba(236,255,241,.68); margin:0 0 .35rem; }
     .pitch-slot { min-height:118px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
     .pitch-slot .player-card { width:100%; }
-    .pitch-slot .pitch-empty { min-height:90px; display:flex; align-items:center; justify-content:center; width:100%; }
-    .image-wrap { display:inline-flex; align-items:center; justify-content:center; overflow:hidden; border-radius:50%; }
-    .image-wrap img { width:100%; height:100%; object-fit:cover; }
-    .image-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#20242d; color:rgba(255,255,255,.85); font-weight:800; font-size:.9rem; border:3px solid rgba(255,255,255,.9); }
-    .pitch-empty { text-align:center; color:rgba(236,255,241,.58); font-size:.72rem; }
+    .pitch-empty { min-height:90px; display:flex; align-items:center; justify-content:center; color:rgba(236,255,241,.58); font-size:.72rem; }
+
+    /* Player cards: deliberately simple HTML so Streamlit never leaks closing tags */
     .player-card { text-align:center; min-height:112px; padding:.15rem .1rem .25rem; }
-    .player-card img { width:72px; height:72px; object-fit:cover; border-radius:50%; border:3px solid rgba(255,255,255,.9); background:#20242d; display:inline-block; }
+    .player-card img { width:72px; height:72px; object-fit:contain; border-radius:50%; border:3px solid rgba(255,255,255,.9); background:#20242d; display:block; margin:0 auto; }
+    .player-avatar-fallback { width:72px; height:72px; border-radius:50%; border:3px solid rgba(255,255,255,.9); background:#20242d; display:flex; align-items:center; justify-content:center; margin:0 auto; color:white; font-weight:850; font-size:.9rem; }
     .player-card .name { font-weight:850; font-size:.88rem; margin-top:.18rem; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .player-card .team { color:rgba(255,255,255,.72); font-size:.72rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .player-card .meta { color:rgba(255,255,255,.82); font-size:.69rem; }
@@ -70,15 +59,15 @@ st.markdown(
 
     .bench-wrap { margin-top:.15rem; }
     .bench-card { padding:.65rem .45rem; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.045); text-align:center; }
-    .bench-card img { width:58px; height:58px; object-fit:cover; border-radius:50%; border:2px solid rgba(255,255,255,.7); display:inline-block; }
+    .bench-card img, .bench-avatar-fallback { width:58px; height:58px; object-fit:contain; border-radius:50%; border:2px solid rgba(255,255,255,.7); display:flex; align-items:center; justify-content:center; margin:0 auto; background:#20242d; color:white; font-weight:800; }
+    .bench-card img { display:block; }
     .bench-card .name { font-weight:750; font-size:.82rem; margin-top:.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .bench-card .meta { font-size:.7rem; opacity:.68; }
-    .captain-card { padding:1rem; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.025); text-align:center; min-height:260px; }
-    .captain-card .player-card { min-height:190px; }
-    div[data-testid="stMetric"] { padding:.45rem .15rem; }
+    .captain-card { padding:1rem; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.025); text-align:center; min-height:250px; }
+    .captain-title { font-size:.72rem; font-weight:850; letter-spacing:.12em; opacity:.65; margin-bottom:.5rem; }
 
-    /* Build-around controls: compact, identical dark circles */
-    [class*="st-key-plus_"] { display:flex; justify-content:center; align-items:center; min-height:86px; }
+    /* Build-around controls */
+    [class*="st-key-plus_"] { display:flex; justify-content:center; align-items:center; min-height:90px; }
     [class*="st-key-plus_"] button {
         width:68px !important; min-width:68px !important; max-width:68px !important;
         height:68px !important; min-height:68px !important; max-height:68px !important;
@@ -87,10 +76,10 @@ st.markdown(
         background:rgba(8,35,22,.78) !important; color:rgba(255,255,255,.95) !important;
         font-size:1.45rem !important; line-height:1 !important;
         box-shadow:inset 0 0 16px rgba(0,0,0,.20), 0 4px 12px rgba(0,0,0,.14);
-        transition:all .15s ease;
     }
     [class*="st-key-plus_"] button:hover { border-color:rgba(235,255,240,.72) !important; background:rgba(8,35,22,.96) !important; transform:scale(1.06); }
     [class*="st-key-remove_"] button { font-size:.72rem !important; padding:.15rem .35rem !important; }
+    div[data-testid="stMetric"] { padding:.45rem .15rem; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -121,9 +110,10 @@ def get_analysis():
         photos[p.get("id")] = photo
 
     df["photo_code"] = df["id"].map(photos).fillna("")
+    # Use the official 500x500 cutout first; it is cleaner inside the circular cards.
     df["image_url"] = df["photo_code"].map(
         lambda photo: (
-            f"https://resources.premierleague.com/premierleague25/photos/players/110x140/{photo}.png"
+            f"https://resources.premierleague.com/premierleague25/photos/players/500x500/{photo}.png"
             if photo else ""
         )
     )
@@ -170,67 +160,41 @@ def esc(value):
 
 
 def initials(p):
-    name = str(p.get("name", "?"))
+    name = str(p.get("name", "?")).strip()
     parts = [x for x in name.replace("-", " ").split() if x]
     return "".join(x[0] for x in parts[:2]).upper() or "?"
 
 
-def image_tag(p, size=76):
+def image_tag(p, size=72, bench=False):
     photo = str(p.get("photo_code", "") or "").strip()
-    primary = str(p.get("image_url", "") or "").strip()
-    if not primary and photo:
-        primary = f"https://resources.premierleague.com/premierleague25/photos/players/110x140/{photo}.png"
-    fallback = f"https://resources.premierleague.com/premierleague25/photos/players/500x500/{photo}.png" if photo else ""
-    if primary:
-        fallback_attr = esc(fallback)
-        placeholder = initials(p)
-        return (
-            f'<div class="image-wrap" style="width:{size}px;height:{size}px">'
-            f'<img src="{esc(primary)}" width="{size}" height="{size}" loading="lazy" '
-            f'data-fallback="{fallback_attr}" alt="{esc(p.get("name", ""))}" '
-            f'onerror="if(this.dataset.fallback && this.src!==this.dataset.fallback){{this.src=this.dataset.fallback;}}else{{this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';}}">'
-            f'<span class="image-placeholder">{esc(placeholder)}</span>'
-            f'</div>'
-        )
-    return f'<div class="image-wrap" style="width:{size}px;height:{size}px"><span class="image-placeholder">{esc(initials(p))}</span></div>'
+    url = str(p.get("image_url", "") or "").strip()
+    if not url and photo:
+        url = f"https://resources.premierleague.com/premierleague25/photos/players/500x500/{photo}.png"
+    if url:
+        return f'<img src="{esc(url)}" width="{size}" height="{size}" loading="lazy" alt="{esc(p.get("name", ""))}">'
+    cls = "bench-avatar-fallback" if bench else "player-avatar-fallback"
+    return f'<span class="{cls}">{esc(initials(p))}</span>'
 
 
 def player_card(p, locked=False):
-    img = image_tag(p, 72)
     badge = '<div class="locked-badge">🔒 LÅST</div>' if locked else ''
-    return f"""
-    <div class="player-card">
-      {img}
-      <div class="name">{esc(p.get('name','?'))}</div>
-      <div class="team">{esc(p.get('team_name','?'))}</div>
-      <div class="meta">£{float(p.get('price',0)):.1f}m · {float(p.get('expected_gw_points',0)):.2f} p</div>
-      {badge}
-    </div>
-    """
+    return f'''<div class="player-card">{image_tag(p, 72)}<div class="name">{esc(p.get("name", "?"))}</div><div class="team">{esc(p.get("team_name", "?"))}</div><div class="meta">£{float(p.get("price", 0)):.1f}m · {float(p.get("expected_gw_points", 0)):.2f} p</div>{badge}</div>'''
 
 
 def bench_card(p, locked=False):
-    img = image_tag(p, 58)
     badge = " · 🔒" if locked else ""
-    return f"""
-    <div class="bench-card">
-      {img}
-      <div class="name">{esc(p.get('name','?'))}</div>
-      <div class="meta">{esc(p.get('team_name','?'))} · {esc(p.get('position','?'))}{badge}</div>
-      <div class="meta">£{float(p.get('price',0)):.1f}m · {float(p.get('expected_gw_points',0)):.2f}</div>
-    </div>
-    """
+    return f'''<div class="bench-card">{image_tag(p, 58, bench=True)}<div class="name">{esc(p.get("name", "?"))}</div><div class="meta">{esc(p.get("team_name", "?"))} · {esc(p.get("position", "?"))}{badge}</div><div class="meta">£{float(p.get("price", 0)):.1f}m · {float(p.get("expected_gw_points", 0)):.2f}</div></div>'''
 
 
 def infer_formation(xi):
     counts = Counter(p["position"] for p in xi)
-    key = f"{counts.get('DEF',0)}-{counts.get('MID',0)}-{counts.get('FWD',0)}"
+    key = f"{counts.get('DEF', 0)}-{counts.get('MID', 0)}-{counts.get('FWD', 0)}"
     return key if key in FORMATIONS else "4-4-2"
 
 
 def formation_shape(formation):
     d, m, f = (int(x) for x in formation.split("-"))
-    return {"GKP":1, "DEF":d, "MID":m, "FWD":f}
+    return {"GKP": 1, "DEF": d, "MID": m, "FWD": f}
 
 
 FORMATIONS = {
@@ -244,13 +208,12 @@ FORMATIONS = {
     "5-4-1": "5 forsvar · 4 midtbane · 1 angrep",
 }
 
+PLAYER_LOOKUP = df.set_index("id").to_dict("index")
+
 
 def player_label(pid):
     p = PLAYER_LOOKUP.get(pid, {})
-    return f"{p.get('name','?')} · {p.get('team_name','?')} · £{float(p.get('price',0)):.1f}m"
-
-
-PLAYER_LOOKUP = df.set_index("id").to_dict("index")
+    return f"{p.get('name', '?')} · {p.get('team_name', '?')} · £{float(p.get('price', 0)):.1f}m"
 
 
 def render_static_pitch(xi, formation, locked_ids=None, title="LAGOPPSTILLING", key="fpl_static_pitch"):
@@ -262,15 +225,13 @@ def render_static_pitch(xi, formation, locked_ids=None, title="LAGOPPSTILLING", 
     shape = formation_shape(formation)
     with st.container(key=key):
         st.markdown('<span class="pitch-anchor"></span>', unsafe_allow_html=True)
-        st.markdown(f'<div class="pitch-formation">{title}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="pitch-formation">{esc(title)}</div>', unsafe_allow_html=True)
 
-        # 4-4-2 is deliberately laid out as four true football rows.
-        # Keeper is centered, defenders/midfielders use four equal lanes,
-        # and the two forwards occupy the two central attacking lanes.
-        players = by_pos["GKP"][:shape["GKP"]]
         gkp = st.columns([1, 2, 1], gap="small")
         with gkp[1]:
-            st.markdown('<div class="pitch-slot">' + (player_card(players[0], players[0].get("id") in locked_ids) if players else '<div class="pitch-empty">—</div>') + '</div>', unsafe_allow_html=True)
+            players = by_pos["GKP"][:1]
+            content = player_card(players[0], players[0].get("id") in locked_ids) if players else '<div class="pitch-empty">—</div>'
+            st.markdown(f'<div class="pitch-slot">{content}</div>', unsafe_allow_html=True)
 
         for pos, css_class in [("DEF", "pitch-row-def"), ("MID", "pitch-row-mid")]:
             players = by_pos[pos][:shape[pos]]
@@ -282,7 +243,8 @@ def render_static_pitch(xi, formation, locked_ids=None, title="LAGOPPSTILLING", 
 
         players = by_pos["FWD"][:shape["FWD"]]
         cols = st.columns(4, gap="small")
-        for i, col_index in enumerate([1, 2]):
+        forward_columns = [1, 2] if shape["FWD"] == 2 else list(range(shape["FWD"]))
+        for i, col_index in enumerate(forward_columns):
             with cols[col_index]:
                 content = player_card(players[i], players[i].get("id") in locked_ids) if i < len(players) else '<div class="pitch-empty">—</div>'
                 st.markdown(f'<div class="pitch-slot pitch-row-fwd">{content}</div>', unsafe_allow_html=True)
@@ -290,12 +252,10 @@ def render_static_pitch(xi, formation, locked_ids=None, title="LAGOPPSTILLING", 
 
 def render_bench(bench, locked_ids=None):
     locked_ids = set(locked_ids or [])
-    st.markdown('<div class="bench-wrap">', unsafe_allow_html=True)
     cols = st.columns(4, gap="small")
     for i, p in enumerate(bench[:4]):
         with cols[i]:
             st.markdown(bench_card(p, p.get("id") in locked_ids), unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def captain_cards(xi):
@@ -304,11 +264,10 @@ def captain_cards(xi):
     cap = max(xi, key=lambda x: x["captain_score"])
     vice = max([x for x in xi if x["id"] != cap["id"]], key=lambda x: x["captain_score"])
     c1, c2 = st.columns(2)
-    for col, title, p in [(c1,"KAPTEIN",cap),(c2,"VICE-CAPTAIN",vice)]:
+    for col, title, p in [(c1, "KAPTEIN", cap), (c2, "VICE-CAPTAIN", vice)]:
         with col:
-            st.markdown(f'<div class="captain-card"><div class="pitch-title">{title}</div>', unsafe_allow_html=True)
-            st.markdown(player_card(p), unsafe_allow_html=True)
-            st.markdown(f'<div style="text-align:center">Forventet: <b>{float(p["expected_gw_points"]):.2f}</b> poeng</div></div>', unsafe_allow_html=True)
+            card = f'''<div class="captain-card"><div class="captain-title">{title}</div>{player_card(p)}<div>Forventet: <b>{float(p["expected_gw_points"]):.2f}</b> poeng</div></div>'''
+            st.markdown(card, unsafe_allow_html=True)
 
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
@@ -340,32 +299,32 @@ with tab1:
 
 with tab2:
     st.header("🔄 Beste transfermål")
-    positions = ["GKP","DEF","MID","FWD"]
+    positions = ["GKP", "DEF", "MID", "FWD"]
     position_filter = st.multiselect("Posisjon", positions, default=positions)
     min_minutes = st.slider("Minimum forventede minutter", 0, 90, 60, 5)
     x = df[df["position"].isin(position_filter) & (df["expected_minutes"] >= min_minutes)].copy()
-    x = x.sort_values(["transfer_score","expected_gw_points"], ascending=False).head(30)
-    cols = ["name","team_name","position","price","ownership","expected_minutes","expected_gw_points","value","fixture_next3","transfer_score","recommendation"]
+    x = x.sort_values(["transfer_score", "expected_gw_points"], ascending=False).head(30)
+    cols = ["name", "team_name", "position", "price", "ownership", "expected_minutes", "expected_gw_points", "value", "fixture_next3", "transfer_score", "recommendation"]
     st.dataframe(x[[c for c in cols if c in x.columns]], use_container_width=True, hide_index=True)
 
 with tab3:
     st.header("©️ Kapteinguide")
-    x = df[df["expected_minutes"] >= 60].sort_values(["captain_score","expected_gw_points"], ascending=False).head(20)
+    x = df[df["expected_minutes"] >= 60].sort_values(["captain_score", "expected_gw_points"], ascending=False).head(20)
     if len(x):
         st.success(f"🥇 Førstevalg: **{x.iloc[0]['name']}** · {x.iloc[0]['expected_gw_points']:.2f} forventede poeng")
-    cols = ["name","team_name","position","price","expected_minutes","expected_gw_points","fixture_next3","captain_score"]
+    cols = ["name", "team_name", "position", "price", "expected_minutes", "expected_gw_points", "fixture_next3", "captain_score"]
     st.dataframe(x[[c for c in cols if c in x.columns]], use_container_width=True, hide_index=True)
 
 with tab4:
     st.header("🔥 Differentials")
-    x = df[(df["ownership"] <= ownership_limit) & (df["expected_minutes"] >= 60)].sort_values(["differential_score","expected_gw_points"], ascending=False).head(30)
-    cols = ["name","team_name","position","price","ownership","expected_minutes","expected_gw_points","value","fixture_next3","differential_score"]
+    x = df[(df["ownership"] <= ownership_limit) & (df["expected_minutes"] >= 60)].sort_values(["differential_score", "expected_gw_points"], ascending=False).head(30)
+    cols = ["name", "team_name", "position", "price", "ownership", "expected_minutes", "expected_gw_points", "value", "fixture_next3", "differential_score"]
     st.dataframe(x[[c for c in cols if c in x.columns]], use_container_width=True, hide_index=True)
 
 with tab5:
     st.header("💰 Best value")
-    x = df[df["expected_minutes"] >= 60].sort_values(["value","expected_gw_points"], ascending=False).head(30)
-    cols = ["name","team_name","position","price","ownership","expected_minutes","expected_gw_points","value","fixture_next3"]
+    x = df[df["expected_minutes"] >= 60].sort_values(["value", "expected_gw_points"], ascending=False).head(30)
+    cols = ["name", "team_name", "position", "price", "ownership", "expected_minutes", "expected_gw_points", "value", "fixture_next3"]
     st.dataframe(x[[c for c in cols if c in x.columns]], use_container_width=True, hide_index=True)
 
 with tab6:
@@ -393,13 +352,13 @@ with tab6:
         st.session_state.build_pitch_slots = {k: None for k in valid_slots}
         st.session_state.build_active_slot = None
         st.session_state.pop("build_result", None)
+        st.session_state.pop("build_result_signature", None)
         st.rerun()
 
     with st.container(key="build-pitch"):
         st.markdown('<span class="pitch-anchor"></span>', unsafe_allow_html=True)
         st.markdown('<div class="pitch-formation">4-4-2 · TOM BANE</div>', unsafe_allow_html=True)
 
-        # Keeper – centered in the pitch.
         pid = slots.get("GKP_0")
         gkp = st.columns([1, 2, 1], gap="small")
         with gkp[1]:
@@ -415,7 +374,6 @@ with tab6:
                     st.session_state.pop("build_result", None)
                     st.rerun()
 
-        # Four defenders – one per lane.
         for pos in ["DEF", "MID"]:
             row_keys = [f"{pos}_{i}" for i in range(shape[pos])]
             cols = st.columns(4, gap="small")
@@ -434,7 +392,6 @@ with tab6:
                             st.session_state.pop("build_result", None)
                             st.rerun()
 
-        # Two forwards – use the two central lanes of the four-lane grid.
         row_keys = [f"FWD_{i}" for i in range(shape["FWD"])]
         cols = st.columns(4, gap="small")
         for i, col_index in enumerate([1, 2]):
@@ -459,12 +416,13 @@ with tab6:
         available = [pid for pid in df[df["position"] == pos]["id"].tolist() if pid not in selected_set]
         st.markdown(f"### ➕ Velg spiller til {pos}")
         pick = st.selectbox("Spiller", [0] + available, format_func=lambda pid: "Velg spiller..." if pid == 0 else player_label(pid), key=f"pick_{active}")
-        a, b = st.columns([1,1])
+        a, b = st.columns(2)
         with a:
             if st.button("Legg spiller på banen", type="primary", use_container_width=True, disabled=(pick == 0)):
                 st.session_state.build_pitch_slots[active] = pick
                 st.session_state.build_active_slot = None
                 st.session_state.pop("build_result", None)
+                st.session_state.pop("build_result_signature", None)
                 st.rerun()
         with b:
             if st.button("Avbryt", use_container_width=True):
@@ -477,17 +435,20 @@ with tab6:
         counts = Counter(selected_df["position"])
         clubs = Counter(selected_df["team_id"])
         reasons = []
-        if selected_cost > budget: reasons.append(f"Valgte spillere koster £{selected_cost:.1f}m, mer enn budsjettet på £{budget:.1f}m.")
-        if max(clubs.values(), default=0) > 3: reasons.append("Du har valgt mer enn 3 spillere fra samme klubb.")
-        for pos, limit in {"GKP":2,"DEF":5,"MID":5,"FWD":3}.items():
-            if counts.get(pos,0) > limit: reasons.append(f"For mange {pos}-spillere.")
+        if selected_cost > budget:
+            reasons.append(f"Valgte spillere koster £{selected_cost:.1f}m, mer enn budsjettet på £{budget:.1f}m.")
+        if max(clubs.values(), default=0) > 3:
+            reasons.append("Du har valgt mer enn 3 spillere fra samme klubb.")
+        for pos, limit in {"GKP": 2, "DEF": 5, "MID": 5, "FWD": 3}.items():
+            if counts.get(pos, 0) > limit:
+                reasons.append(f"For mange {pos}-spillere.")
 
         m1, m2, m3 = st.columns(3)
         m1.metric("Låste spillere", len(selected_ids))
         m2.metric("Kostnad låste", f"£{selected_cost:.1f}m")
         m3.metric("Budsjett igjen", f"£{budget-selected_cost:.1f}m")
-        if reasons:
-            for reason in reasons: st.warning(reason)
+        for reason in reasons:
+            st.warning(reason)
 
         signature = tuple(sorted(selected_ids))
         build_button = st.button("🧩 Bygg laget rundt mine spillere", type="primary", use_container_width=True, disabled=bool(reasons))
@@ -509,7 +470,11 @@ with tab6:
                 st.warning("Modellen fant troppen, men den valgte formasjonen har ikke plass til alle låste spillere.")
             else:
                 xi_ids = {p["id"] for p in display_xi}
-                bench = sorted([p for p in squad if p["id"] not in xi_ids], key=lambda p: (p["expected_gw_points"], p.get("minutes_probability",0)), reverse=True)[:4]
+                bench = sorted(
+                    [p for p in squad if p["id"] not in xi_ids],
+                    key=lambda p: (p["expected_gw_points"], p.get("minutes_probability", 0)),
+                    reverse=True,
+                )[:4]
                 st.success("Laget er bygget rundt spillerne på banen. 🔒 = dine valg · 🤖 = modellens valg.")
                 mm1, mm2, mm3 = st.columns(3)
                 mm1.metric("Troppskostnad", f"£{cost:.1f}m")
