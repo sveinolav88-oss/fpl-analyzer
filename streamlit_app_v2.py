@@ -53,7 +53,15 @@ with st.sidebar:
     ownership_limit = st.slider("Differential maks. eierskap (%)", 1, 30, 10)
     st.divider()
     st.subheader("🧠 Mitt FPL-lag")
-    entry_id = st.number_input("FPL Team ID", min_value=0, value=0, step=1, help="Finnes i URL-en til laget ditt på Fantasy Premier League.")
+    saved_entry = str(st.session_state.get("fpl_entry_id", ""))
+    entry_text = st.text_input("FPL Team ID", value=saved_entry, placeholder="F.eks. 1234567", help="Bruk tallet i URL-en til FPL-laget ditt. Eksempel: /entry/1234567/")
+    if st.button("📥 Hent mitt FPL-lag", use_container_width=True, type="primary"):
+        cleaned = entry_text.strip()
+        if not cleaned.isdigit() or int(cleaned) <= 0:
+            st.error("Skriv inn en gyldig FPL Team ID, f.eks. 1234567.")
+        else:
+            st.session_state["fpl_entry_id"] = cleaned
+            st.rerun()
     free_transfers_manual = st.number_input("Free transfers", min_value=1, max_value=5, value=1, step=1)
     bank_manual = st.number_input("Bank (£m)", min_value=0.0, max_value=20.0, value=0.0, step=0.1)
     if st.button("🔄 Oppdater FPL-data", use_container_width=True):
@@ -107,7 +115,7 @@ def render_static_pitch(xi,formation,locked_ids=None,title="STARTING XI",key="be
     shape=formation_shape(formation)
     with st.container(key=key):
         st.markdown(f'<div class="pitch-formation">{esc(title)}</div>',unsafe_allow_html=True)
-        g=st.columns([1,2,1]);
+        g=st.columns([1,2,1])
         with g[1]:
             p=by["GKP"][:1]; st.markdown(f'<div class="pitch-slot">{player_card(p[0],p[0]["id"] in locked_ids) if p else ""}</div>',unsafe_allow_html=True)
         for pos in ["DEF","MID"]:
@@ -136,16 +144,17 @@ def captain_cards(xi):
     for col,title,p in [(a,"KAPTEIN",cap),(b,"VICE-CAPTAIN",vice)]:
         with col: st.markdown(f'<div class="captain-card"><div class="captain-title">{title}</div>{player_card(p)}<div>Forventet: <b>{float(p["expected_gw_points"]):.2f}</b> poeng</div></div>',unsafe_allow_html=True)
 
-# Manager data
+# Manager data: only query FPL when a valid Team ID has been explicitly saved.
 manager_entry=None; manager_picks=None; manager_ids=[]; manager_bank=bank_manual
-if entry_id:
+entry_id_text=str(st.session_state.get("fpl_entry_id", "")).strip()
+if entry_id_text.isdigit() and int(entry_id_text)>0:
     try:
-        manager_entry, manager_picks = load_manager(int(entry_id), current_gw)
+        manager_entry, manager_picks = load_manager(int(entry_id_text), current_gw)
         manager_ids=[int(x["element"]) for x in manager_picks.get("picks",[])][:15]
         if manager_entry.get("last_deadline_bank") is not None and bank_manual==0:
             manager_bank=float(manager_entry["last_deadline_bank"])/10.0
     except Exception as exc:
-        st.sidebar.error(f"Kunne ikke hente lag {int(entry_id)}: {exc}")
+        st.sidebar.error(f"Fant ikke FPL-laget med ID {entry_id_text}. Sjekk at ID-en er riktig og at laget er registrert i FPL.")
 
 if manager_ids:
     df["selling_price"]=df["price"]
@@ -157,15 +166,15 @@ if manager_ids:
 else:
     team_df=pd.DataFrame()
 
-# Navigation
+# Navigation — Gameweek Plan is intentionally the first/default tab.
 TABS=["🧠 Gameweek plan","🏆 Beste lag","🔄 Transfers","©️ Kapteiner","🔥 Differentials","💰 Best value","🧩 Bygg rundt mine spillere"]
-tab1,tab2,tab3,tab4,tab5,tab6,tab7=st.tabs(TABS)
+tab1,tab2,tab3,tab4,tab5,tab6,tab7=st.tabs(TABS, default="🧠 Gameweek plan")
 
 with tab1:
     st.header(f"🧠 Gameweek {current_gw} Decision Engine")
     st.caption("Målet er maksimal forventet totalpoeng over sesongen – ikke bare å finne den beste spilleren denne runden.")
     if not manager_ids:
-        st.info("Skriv inn ditt FPL Team ID i sidepanelet. Da henter appen automatisk ditt faktiske 15-mannslag og bygger transfer- og chipplanen rundt det.")
+        st.info("Legg inn FPL Team ID i sidepanelet og trykk «Hent mitt FPL-lag». Når laget er hentet, bruker Gameweek Plan ditt faktiske 15-mannslag.")
         st.markdown("**Motoren er klar til å bruke:** 6-GW projeksjon · transferkostnad · 1/2 FT · transfer timing · captain/vice · Wildcard · Free Hit · Bench Boost · Triple Captain.")
     else:
         with st.spinner("Simulerer de neste 6 Gameweeks..."):
