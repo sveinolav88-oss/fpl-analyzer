@@ -122,8 +122,6 @@ def _improve_by_swaps(squad, pools, budget_units, locked_ids):
                     if not _valid(trial, budget_units):
                         continue
                     score = _objective(trial)
-                    # Primary: expected-points objective. Secondary: use more budget
-                    # only when the statistical objective is effectively identical.
                     cost = sum(_price_units(x) for x in trial)
                     old_cost = sum(_price_units(x) for x in current)
                     if score > best_score + 1e-9 or (abs(score-best_score) < 0.015 and cost > old_cost):
@@ -164,7 +162,7 @@ def select_squad(df, budget=100.0, locked_ids=None):
         return None
 
     remaining = {p: REQUIRED[p]-lc.get(p,0) for p in REQUIRED}
-    if any(len(pools[p]) < n for p,n in remaining.items()):
+    if any(len(pools[p]) < n for p in remaining.items()):
         return None
 
     slots = [p for p in ORDER for _ in range(remaining[p])]
@@ -173,8 +171,6 @@ def select_squad(df, budget=100.0, locked_ids=None):
     for i in range(len(slots)-1,-1,-1):
         suffix[i] = suffix[i+1] + cheapest[slots[i]]
 
-    # Bounded beam for speed. The local-search pass below expands the practical
-    # search around the best candidates and corrects beam-pruning mistakes.
     beam = [(locked, locked_cost, Counter(_counts(locked,"team_id")), 0.0)]
     for i,pos in enumerate(slots):
         states=[]
@@ -217,7 +213,6 @@ def select_squad(df, budget=100.0, locked_ids=None):
     if not valid:
         return None
 
-    # Start from the statistically best beam result, then explicitly test upgrades.
     best=max(valid,key=_objective)
     best=_improve_by_swaps(best,pools,budget_units,locked_ids)
 
