@@ -1,13 +1,12 @@
 # Main Streamlit entrypoint. The full application lives in streamlit_app_v2.py.
 source = open("streamlit_app_v2.py", encoding="utf-8").read()
 
-# Use the robust optimizer for both the normal Best Team calculation and
-# "Build around my players". The old main.py optimizer used a greedy seed
-# builder which could spend the budget too early and incorrectly return None
-# even when a valid squad existed around the locked players.
+# Use the fast bounded optimizer for both the normal Best Team calculation and
+# "Build around my players". The previous beam was too large for Streamlit and
+# could generate millions of Python objects on one button click.
 source = source.replace(
     'from main import load_fpl, load_fixtures, build_players, assign_recommendations, select_squad, build_around_players',
-    'from main import load_fpl, load_fixtures, build_players, assign_recommendations\nfrom squad_optimizer import select_squad, build_around_players',
+    'from main import load_fpl, load_fixtures, build_players, assign_recommendations\nfrom fast_squad_optimizer import select_squad, build_around_players',
 )
 
 source = source.replace(
@@ -37,16 +36,12 @@ source = source.replace(
     'manager_ids=[int(x["element"]) for x in manager_picks.get("picks",[])][:15]',
     'manager_ids=[int(x["element"]) for x in manager_picks.get("picks",[])][:15] if manager_picks else []\n        if manager_picks is None:\n            st.sidebar.info("FPL-laget er funnet. FPL har ikke publisert spillerlisten for denne Gameweeken ennå. Den hentes automatisk når picks blir tilgjengelig.")'
 )
-# Keep manager errors useful: the underlying FPL API status is much more
-# informative than the old generic "ID is wrong" message.
 source = source.replace(
     'st.sidebar.error(f"Fant ikke FPL-laget med ID {entry_id_text}. Sjekk at ID-en er riktig og at laget er registrert i FPL.")',
     'st.sidebar.error(f"Kunne ikke hente FPL-laget {entry_id_text}. {type(exc).__name__}: {exc}")'
 )
 
-# Use a 4-GW rolling horizon for transfer decisions. This keeps the engine
-# focused on actionable near-term decisions while fresh FPL data can re-rank
-# the team every Gameweek.
+# Use a 4-GW rolling horizon for transfer decisions.
 source = source.replace('6-GW projeksjon', '4-GW projeksjon')
 source = source.replace('de neste 6 Gameweeks', 'de neste 4 Gameweeks')
 source = source.replace('horizon=6', 'horizon=4')
