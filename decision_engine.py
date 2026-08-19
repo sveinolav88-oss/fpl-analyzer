@@ -1,6 +1,8 @@
 import math
+import time
 from collections import Counter
 from datetime import datetime, timezone
+from functools import lru_cache
 
 import pandas as pd
 import requests
@@ -8,19 +10,67 @@ import requests
 from main import select_squad
 
 API = "https://fantasy.premierleague.com/api"
-TIMEOUT = 20
-FORMATIONS = [(3,4,3),(3,5,2),(4,3,3),(4,4,2),(4,5,1),(5,2,3),(5,3,2),(5,4,1)]
+TIMEOUT = 30
+
+SESSION = requests.Session()
+SESSION.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Referer": "https://fantasy.premierleague.com/",
+    "Origin": "https://fantasy.premierleague.com",
+})
+
+
+class FPLAPIError(RuntimeError):
+    def __init__(self, path, status, message=""):
+        self.path = path
+        self.status = status
+        self.message = message
+        detail = f": {message}" if message else ""
+        super().__init__(f"FPL API svarte HTTP {status} på {path}{detail}")
 
 
 def _get(path):
-    r = requests.get(API + path, timeout=TIMEOUT)
-    r.raise_for_status()
-    return r.json()
+    last_error = None
+    for attempt in range(4):
+        try:
+            r = SESSION.get(API + path, timeout=TIMEOUT)
+            if r.status_code == 200:
+                return r.json()
+            if r.status_code in (429, 500, 502, 503, 504):
+                last_error = FPLAPIError(path, r.status_code)
+                if attempt < 3:
+                    time.sleep(2 ** attempt)
+                    continue
+            text = (r.text or "").strip().replace("\n", " ")[:180]
+            raise FPLAPIError(path, r.status_code, text)
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt < 3:
+                time.sleep(2 ** attempt)
+                continue
+            raise
+    if last_error:
+        raise last_error
+    raise RuntimeError("Ukjent feil ved FPL API-kall")
 
 
+def _normalise_entry_id(entry_id):
+    value = str(entry_id or "").strip()
+    if "/entry/" in value:
+        value = value.split("/entry/", 1)[1].split("/", 1)[0]
+    value = value.strip()
+    if not value.isdigit() or int(value) <= 0:
+        raise ValueError("FPL Team ID må være et positivt tall, eller en FPL-team-URL.")
+    return int(value)
+
+
+@lru_cache(maxsize=64)
 def load_manager(entry_id, event):
-    entry = _get(f"/entry/{int(entry_id)}/")
-    picks = _get(f"/entry/{int(entry_id)}/event/{int(event)}/picks/")
+    entry_id = _normalise_entry_id(entry_id)
+    event = int(event)
+    entry = _get(f"/entry/{entry_id}/")
+    picks = _get(f"/entry/{entry_id}/event/{event}/picks/")
     return entry, picks
 
 
