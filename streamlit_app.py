@@ -1,9 +1,20 @@
 # Main Streamlit entrypoint. The full application lives in streamlit_app_v2.py.
 source = open("streamlit_app_v2.py", encoding="utf-8").read()
+
+# Use the robust optimizer for both the normal Best Team calculation and
+# "Build around my players". The old main.py optimizer used a greedy seed
+# builder which could spend the budget too early and incorrectly return None
+# even when a valid squad existed around the locked players.
+source = source.replace(
+    'from main import load_fpl, load_fixtures, build_players, assign_recommendations, select_squad, build_around_players',
+    'from main import load_fpl, load_fixtures, build_players, assign_recommendations\nfrom squad_optimizer import select_squad, build_around_players',
+)
+
 source = source.replace(
     'cols=st.columns([1,2,1])\n        for i in range(2):\n            with cols[i+1 if i==0 else i]:',
     'cols=st.columns([1,1,1,1])\n        for i in range(2):\n            with cols[i+1]:'
 )
+
 # FPL picks can legitimately return 404 before the current Gameweek deadline.
 # Keep the manager itself loadable so the app can use the ID and automatically
 # pick up the squad once FPL publishes the GW picks endpoint.
