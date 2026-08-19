@@ -32,4 +32,15 @@ source = source.replace(
     'st.sidebar.error(f"Fant ikke FPL-laget med ID {entry_id_text}. Sjekk at ID-en er riktig og at laget er registrert i FPL.")',
     'st.sidebar.error(f"Kunne ikke hente FPL-laget {entry_id_text}. {type(exc).__name__}: {exc}")'
 )
+
+# Use a 4-GW rolling horizon for transfer decisions. This keeps the engine
+# focused on actionable near-term decisions while fresh FPL data can re-rank
+# the team every Gameweek.
+source = source.replace('6-GW projeksjon', '4-GW projeksjon')
+source = source.replace('de neste 6 Gameweeks', 'de neste 4 Gameweeks')
+source = source.replace('horizon=6', 'horizon=4')
+source = source.replace('6 GW projeksjon', '4 GW projeksjon')
+source = source.replace('over 6 GW', 'over 4 GW')
+source = source.replace('neste 6 GW', 'neste 4 GW')
+
 exec(source, globals())
