@@ -4,6 +4,28 @@ source = source.replace(
     'cols=st.columns([1,2,1])\n        for i in range(2):\n            with cols[i+1 if i==0 else i]:',
     'cols=st.columns([1,1,1,1])\n        for i in range(2):\n            with cols[i+1]:'
 )
+# FPL picks can legitimately return 404 before the current Gameweek deadline.
+# Keep the manager itself loadable so the app can use the ID and automatically
+# pick up the squad once FPL publishes the GW picks endpoint.
+source = source.replace(
+    'from decision_engine import current_gameweek, load_manager, decision_summary',
+    '''from decision_engine import current_gameweek, load_manager as _load_manager, decision_summary
+
+def load_manager(entry_id, event):
+    try:
+        return _load_manager(entry_id, event)
+    except Exception as exc:
+        message = str(exc)
+        if "HTTP 404" in message and "/picks/" in message:
+            from decision_engine import _get
+            entry = _get(f"/entry/{int(entry_id)}/")
+            return entry, None
+        raise'''
+)
+source = source.replace(
+    'manager_ids=[int(x["element"]) for x in manager_picks.get("picks",[])][:15]',
+    'manager_ids=[int(x["element"]) for x in manager_picks.get("picks",[])][:15] if manager_picks else []\n        if manager_picks is None:\n            st.sidebar.info("FPL-laget er funnet. FPL har ikke publisert spillerlisten for denne Gameweeken ennå. Den hentes automatisk når picks blir tilgjengelig.")'
+)
 # Keep manager errors useful: the underlying FPL API status is much more
 # informative than the old generic "ID is wrong" message.
 source = source.replace(
