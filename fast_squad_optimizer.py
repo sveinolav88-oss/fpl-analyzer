@@ -5,6 +5,11 @@ REQUIRED = {"GKP": 2, "DEF": 5, "MID": 5, "FWD": 3}
 ORDER = ["FWD", "MID", "DEF", "GKP"]
 
 
+def _price_units(x):
+    """FPL prices are in £0.1m units; use integers to avoid float drift."""
+    return int(round(float(x.get("price", 0.0)) * 10))
+
+
 def _counts(players, key):
     return Counter(x.get(key) for x in players)
 
@@ -54,7 +59,7 @@ def _pools(df, locked):
 
 def select_squad(df, budget=100.0, locked_ids=None):
     locked_ids = {int(x) for x in (locked_ids or [])}
-    budget = float(budget)
+    budget_units = int(round(float(budget) * 10))
     if df is None or len(df) == 0:
         return None
     by_id = {int(x["id"]): x for x in df.to_dict("records")}
@@ -64,8 +69,8 @@ def select_squad(df, budget=100.0, locked_ids=None):
     lc = _counts(locked,"position")
     if len(locked) > 15 or any(lc.get(p,0) > n for p,n in REQUIRED.items()) or max(_counts(locked,"team_id").values(),default=0) > 3:
         return None
-    locked_cost = sum(float(x.get("price",0)) for x in locked)
-    if locked_cost > budget + 1e-9:
+    locked_cost = sum(_price_units(x) for x in locked)
+    if locked_cost > budget_units:
         return None
 
     pools = _pools(df, locked_ids)
@@ -75,8 +80,8 @@ def select_squad(df, budget=100.0, locked_ids=None):
     if any(len(pools[p]) < n for p,n in remaining.items()):
         return None
     slots = [p for p in ORDER for _ in range(remaining[p])]
-    cheapest = {p:min(float(x.get("price",0)) for x in pools[p]) for p in REQUIRED}
-    suffix = [0.0]*(len(slots)+1)
+    cheapest = {p:min(_price_units(x) for x in pools[p]) for p in REQUIRED}
+    suffix = [0]*(len(slots)+1)
     for i in range(len(slots)-1,-1,-1):
         suffix[i] = suffix[i+1] + cheapest[slots[i]]
 
@@ -95,18 +100,19 @@ def select_squad(df, budget=100.0, locked_ids=None):
                 team=x.get("team_id")
                 if clubs.get(team,0)>=3:
                     continue
-                nc=cost+float(x.get("price",0))
-                if nc > budget+1e-9 or nc+floor > budget+1e-9:
+                price_units = _price_units(x)
+                nc=cost+price_units
+                if nc > budget_units or nc+floor > budget_units:
                     continue
                 cc=clubs.copy(); cc[team]+=1
                 states.append((players+[x],nc,cc,score+_rank(x)))
         if not states:
             return None
         states.sort(key=lambda s:s[3], reverse=True)
-        # Preserve cheap and expensive routes rather than only the top score.
-        buckets={}; kept=[]; bucket_size=max(.5,budget/30)
+        buckets={}; kept=[]
+        bucket_size=max(5, budget_units//30)
         for s in states:
-            b=int(s[1]/bucket_size)
+            b=s[1]//bucket_size
             if buckets.get(b,0)>=65:
                 continue
             buckets[b]=buckets.get(b,0)+1; kept.append(s)
@@ -117,7 +123,8 @@ def select_squad(df, budget=100.0, locked_ids=None):
     valid=[]
     for s in beam:
         squad=s[0]
-        if len(squad)!=15 or sum(float(x.get("price",0)) for x in squad)>budget+1e-9:
+        total_units=sum(_price_units(x) for x in squad)
+        if len(squad)!=15 or total_units>budget_units:
             continue
         pc=_counts(squad,"position")
         if any(pc.get(p,0)!=n for p,n in REQUIRED.items()):
@@ -131,7 +138,8 @@ def select_squad(df, budget=100.0, locked_ids=None):
     xi,_=_starting_xi(best); ids={int(x["id"]) for x in xi}
     bench=[x for x in best if int(x["id"]) not in ids]
     bench.sort(key=lambda x:(float(x.get("expected_gw_points",0)),float(x.get("minutes_probability",0))),reverse=True)
-    return (_objective(best),sum(float(x.get("price",0)) for x in best),best,xi,bench)
+    total_units=sum(_price_units(x) for x in best)
+    return (_objective(best),total_units/10.0,best,xi,bench)
 
 
 def build_around_players(df, selected_player_ids, budget=100.0):
