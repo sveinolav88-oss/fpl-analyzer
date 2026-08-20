@@ -1,5 +1,17 @@
 """Captain-aware decision layer for the Streamlit app."""
-from decision_engine import current_gameweek, load_manager, build_projection_matrix, transfer_candidates, best_two_transfer, chip_windows, wildcard_window
+from decision_engine import current_gameweek, load_manager as _load_manager, build_projection_matrix, transfer_candidates, best_two_transfer, chip_windows, wildcard_window
+
+
+def load_manager(entry_id, event):
+    try:
+        return _load_manager(entry_id, event)
+    except Exception as exc:
+        message = str(exc)
+        if "HTTP 404" in message and "/picks/" in message:
+            from decision_engine import _get
+            entry = _get(f"/entry/{int(entry_id)}/")
+            return entry, None
+        raise
 
 
 def _legal_xi_with_captain(squad_df, points_by_id):
