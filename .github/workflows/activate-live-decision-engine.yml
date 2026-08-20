@@ -1,40 +1,19 @@
-name: Activate live decision engine v2
+name: Validate live decision engine
 
 on:
   push:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  activate:
-    if: "!contains(github.event.head_commit.message, '[activate-decision-v2]')"
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Switch Streamlit app to decision engine v2
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('streamlit_app.py')
-          s = p.read_text(encoding='utf-8')
-          old = "source = source.replace(\n    'from decision_engine import current_gameweek, load_manager, decision_summary',"
-          if old not in s:
-              raise SystemExit('Expected decision-engine patch block was not found')
-          s = s.replace("from decision_engine import current_gameweek, load_manager, decision_summary", "from decision_engine_v2 import current_gameweek, load_manager, decision_summary", 1)
-          marker = '# LIVE DECISION ENGINE V2'
-          if marker not in s:
-              s = s.replace('exec(source, globals())', marker + '\nexec(source, globals())')
-          p.write_text(s, encoding='utf-8')
-          PY
-      - name: Validate
-        run: python -m py_compile streamlit_app.py decision_engine.py decision_engine_v2.py
-      - name: Commit activation
-        run: |
-          git config user.name 'fpl-analyzer-bot'
-          git config user.email 'actions@users.noreply.github.com'
-          git add streamlit_app.py
-          git diff --cached --quiet && exit 0
-          git commit -m '[activate-decision-v2] Activate calibrated decision engine'
-          git push
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Validate Python syntax
+        run: python -m py_compile streamlit_app.py streamlit_app_v2.py decision_engine.py decision_engine_v2.py manager_sync.py sitecustomize.py fpl_model_v2.py fast_squad_optimizer.py
