@@ -6,8 +6,21 @@ source = open("streamlit_app_v2.py", encoding="utf-8").read()
 # could generate millions of Python objects on one button click.
 source = source.replace(
     'from main import load_fpl, load_fixtures, build_players, assign_recommendations, select_squad, build_around_players',
-    'from main import load_fpl, load_fixtures, build_players, assign_recommendations\nfrom fast_squad_optimizer import select_squad, build_around_players, _valid, _objective, _starting_xi',
+    'from main import load_fpl, load_fixtures\nfrom fpl_model_v2 import build_players, assign_recommendations\nfrom fast_squad_optimizer import select_squad, build_around_players, _valid, _objective, _starting_xi',
 )
+
+# Use a calibrated scoring model. FPL ep_next remains a strong prior, but it
+# is no longer double-discounted by the minutes model.
+source = source.replace(
+    'c4.metric(f"Forventede poeng GW{current_gw}", f"{top_player.expected_gw_points:.2f}")',
+    'c4.metric(f"Beste spillerprognose GW{current_gw}", f"{top_player.expected_gw_points:.2f}")',
+)
+source = source.replace('6-GW projeksjon', '4-GW projeksjon')
+source = source.replace('de neste 6 Gameweeks', 'de neste 4 Gameweeks')
+source = source.replace('over 6 GW', 'over 4 GW')
+source = source.replace('neste 6 GW', 'neste 4 GW')
+source = source.replace('horizon=6', 'horizon=4')
+
 
 source = source.replace(
     'cols=st.columns([1,2,1])\n        for i in range(2):\n            with cols[i+1 if i==0 else i]:',
