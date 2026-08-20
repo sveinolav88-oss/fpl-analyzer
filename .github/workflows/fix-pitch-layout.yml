@@ -1,0 +1,118 @@
+name: Fix football pitch layout
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: "!contains(github.event.head_commit.message, '[fix-pitch-layout]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align players with pitch orientation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('streamlit_app_v2.py')
+          s = p.read_text(encoding='utf-8')
+
+          start = s.index('def render_static_pitch(')
+          end = s.index('\ndef render_bench(', start)
+          new_static = '''def render_static_pitch(xi,formation,locked_ids=None,title="STARTING XI",key="best-pitch"):
+              locked_ids=set(locked_ids or [])
+              by={p:[] for p in ["GKP","DEF","MID","FWD"]}
+              for p in xi: by[p["position"]].append(p)
+              shape=formation_shape(formation)
+              with st.container(key=key):
+                  st.markdown(f'<div class="pitch-formation">{esc(title)}</div>',unsafe_allow_html=True)
+                  # The pitch is drawn with the opponent's goal at the top and our goal at the bottom.
+                  # Therefore: forwards top -> midfield -> defence -> goalkeeper bottom.
+                  for pos in ["FWD","MID","DEF"]:
+                      players=by[pos][:shape[pos]]
+                      if not players: continue
+                      cols=st.columns(len(players),gap="small")
+                      for i,p in enumerate(players):
+                          with cols[i]:
+                              st.markdown(f'<div class="pitch-slot">{player_card(p,p["id"] in locked_ids)}</div>',unsafe_allow_html=True)
+                  p=by["GKP"][:1]
+                  if p:
+                      cols=st.columns([1,2,1],gap="small")
+                      with cols[1]:
+                          st.markdown(f'<div class="pitch-slot">{player_card(p[0],p[0]["id"] in locked_ids)}</div>',unsafe_allow_html=True)
+'''
+          s = s[:start] + new_static + s[end:]
+
+          # Replace the interactive 4-4-2 build pitch block so its rows use the same football orientation.
+          old = '''    with st.container(key="build-pitch"):
+          st.markdown('<div class="pitch-formation">4-4-2 · TOM BANE</div>',unsafe_allow_html=True)
+          g=st.columns([1,2,1])
+          with g[1]:
+              pid=slots["GKP_0"]
+              if pid is None:
+                  if st.button("＋",key="plus_GKP_0"): st.session_state.build_active_slot="GKP_0"; st.rerun()
+              else:
+                  st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
+                  if st.button("✕ Fjern",key="remove_GKP_0"): st.session_state.build_pitch_slots["GKP_0"]=None; st.rerun()
+          for posn,n in [("DEF",4),("MID",4)]:
+              cols=st.columns(4)
+              for i,col in enumerate(cols):
+                  with col:
+                      k=f"{posn}_{i}"; pid=slots[k]
+                      if pid is None:
+                          if st.button("＋",key=f"plus_{k}"): st.session_state.build_active_slot=k; st.rerun()
+                      else:
+                          st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
+                          if st.button("✕ Fjern",key=f"remove_{k}"): st.session_state.build_pitch_slots[k]=None; st.rerun()
+          cols=st.columns([1,2,1])
+          for i in range(2):
+              with cols[i+1 if i==0 else i]:
+                  k=f"FWD_{i}"; pid=slots[k]
+                  if pid is None:
+                      if st.button("＋",key=f"plus_{k}"): st.session_state.build_active_slot=k; st.rerun()
+                  else:
+                      st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
+                      if st.button("✕ Fjern",key=f"remove_{k}"): st.session_state.build_pitch_slots[k]=None; st.rerun()
+'''
+          new = '''    with st.container(key="build-pitch"):
+          st.markdown('<div class="pitch-formation">4-4-2 · TOM BANE</div>',unsafe_allow_html=True)
+          # Same orientation as a real football pitch: attack at the top, own goal/keeper at the bottom.
+          for posn,n in [("FWD",2),("MID",4),("DEF",4)]:
+              cols=st.columns(n,gap="small")
+              for i,col in enumerate(cols):
+                  with col:
+                      k=f"{posn}_{i}"; pid=slots[k]
+                      if pid is None:
+                          if st.button("＋",key=f"plus_{k}"): st.session_state.build_active_slot=k; st.rerun()
+                      else:
+                          st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
+                          if st.button("✕ Fjern",key=f"remove_{k}"): st.session_state.build_pitch_slots[k]=None; st.rerun()
+          g=st.columns([1,2,1],gap="small")
+          with g[1]:
+              pid=slots["GKP_0"]
+              if pid is None:
+                  if st.button("＋",key="plus_GKP_0"): st.session_state.build_active_slot="GKP_0"; st.rerun()
+              else:
+                  st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
+                  if st.button("✕ Fjern",key="remove_GKP_0"): st.session_state.build_pitch_slots["GKP_0"]=None; st.rerun()
+'''
+          if old not in s:
+              raise SystemExit('Expected build pitch block not found')
+          s=s.replace(old,new,1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+          python -m py_compile streamlit_app_v2.py streamlit_app.py
+      - name: Commit
+        run: |
+          git config user.name 'fpl-analyzer-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add streamlit_app_v2.py
+          git diff --cached --quiet && exit 0
+          git commit -m '[fix-pitch-layout] Sync players with football pitch'
+          git push
