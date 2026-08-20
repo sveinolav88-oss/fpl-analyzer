@@ -108,9 +108,9 @@ source = source.replace(
         candidates=candidates.sort_values("expected_gw_points",ascending=False).head(12)
         for _,cand in candidates.iterrows():
             trial=list(squad)
-            idx=next((i for i,p in enumerate(trial) if int(p["id"])==old_id),None)
-            if idx is None: continue
-            trial[idx]=cand.to_dict()
+            old_index=next((i for i,p in enumerate(trial) if int(p["id"])==old_id),None)
+            if old_index is None: continue
+            trial[old_index]=cand.to_dict()
             if not _valid(trial,budget_units): continue
             trial_xi,_=_starting_xi(trial)
             delta=_objective(trial)-objective
@@ -143,6 +143,144 @@ with tab2:
 source = source.replace(
     'st.subheader("🪑 Benk"); render_bench(bench)',
     'st.subheader("🪑 Benk"); render_bench(bench)\n        render_optimizer_explanation(df,squad,xi,bench,budget)'
+)
+
+# Add a compact, consistent statistics panel below every completed pitch.
+source = source.replace(
+    '</style>',
+    '''
+.pitch-stats{margin:.35rem 0 1.2rem;padding:.9rem 1rem;border-radius:18px;border:1px solid rgba(255,255,255,.10);background:linear-gradient(135deg,rgba(31,41,55,.78),rgba(17,24,39,.92));box-shadow:0 8px 24px rgba(0,0,0,.14)}
+.pitch-stats-title{font-size:.72rem;font-weight:850;letter-spacing:.10em;text-transform:uppercase;color:rgba(255,255,255,.60);margin-bottom:.55rem}.pitch-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.55rem}.pitch-stat{padding:.55rem .65rem;border-radius:12px;background:rgba(255,255,255,.045);text-align:center}.pitch-stat .label{font-size:.67rem;color:rgba(255,255,255,.58)}.pitch-stat .value{font-size:1.02rem;font-weight:850;color:white;margin-top:.12rem}@media(max-width:800px){.pitch-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>'''
+)
+
+# Keep the pitch itself aligned with the real football layout: attack at the
+# top, defence below midfield, and the goalkeeper centered at the back/bottom.
+old_pitch = '''def render_static_pitch(xi,formation,locked_ids=None,title="STARTING XI",key="best-pitch"):
+    locked_ids=set(locked_ids or []); by={p:[] for p in ["GKP","DEF","MID","FWD"]}
+    for p in xi: by[p["position"]].append(p)
+    shape=formation_shape(formation)
+    with st.container(key=key):
+        st.markdown(f'<div class="pitch-formation">{esc(title)}</div>',unsafe_allow_html=True)
+        g=st.columns([1,2,1])
+        with g[1]:
+            p=by["GKP"][:1]; st.markdown(f'<div class="pitch-slot">{player_card(p[0],p[0]["id"] in locked_ids) if p else ""}</div>',unsafe_allow_html=True)
+        for pos in ["DEF","MID"]:
+            cols=st.columns(4,gap="small")
+            for i,col in enumerate(cols):
+                with col:
+                    p=by[pos][i] if i<len(by[pos]) and i<shape[pos] else None
+                    st.markdown(f'<div class="pitch-slot">{player_card(p,p["id"] in locked_ids) if p else ""}</div>',unsafe_allow_html=True)
+        f=by["FWD"][:shape["FWD"]]
+        cols=st.columns([1,2,1] if len(f)==1 else [1,1,1])
+        if len(f)==1:
+            with cols[1]: st.markdown(f'<div class="pitch-slot">{player_card(f[0],f[0]["id"] in locked_ids)}</div>',unsafe_allow_html=True)
+        else:
+            for i,p in enumerate(f):
+                with cols[i]: st.markdown(f'<div class="pitch-slot">{player_card(p,p["id"] in locked_ids)}</div>',unsafe_allow_html=True)
+'''
+new_pitch = '''def render_pitch_line(players, locked_ids):
+    players=list(players)
+    if not players:
+        return
+    if len(players)==1:
+        cols=st.columns([1,2,1],gap="small")
+        targets=[cols[1]]
+    else:
+        cols=st.columns(len(players),gap="small")
+        targets=cols
+    for col,p in zip(targets,players):
+        with col:
+            st.markdown(f'<div class="pitch-slot">{player_card(p,p["id"] in locked_ids)}</div>',unsafe_allow_html=True)
+
+def render_static_pitch(xi,formation,locked_ids=None,title="STARTING XI",key="best-pitch"):
+    locked_ids=set(locked_ids or []); by={p:[] for p in ["GKP","DEF","MID","FWD"]}
+    for p in xi: by[p["position"]].append(p)
+    shape=formation_shape(formation)
+    with st.container(key=key):
+        st.markdown(f'<div class="pitch-formation">{esc(title)}</div>',unsafe_allow_html=True)
+        # Football orientation: opponents' goal at the top, our goal at the bottom.
+        render_pitch_line(by["FWD"][:shape["FWD"]],locked_ids)
+        render_pitch_line(by["MID"][:shape["MID"]],locked_ids)
+        render_pitch_line(by["DEF"][:shape["DEF"]],locked_ids)
+        render_pitch_line(by["GKP"][:1],locked_ids)
+
+def render_pitch_stats(xi,squad=None,bench=None,budget=None,cost=None,locked_ids=None):
+    xi_points=sum(float(p.get("expected_gw_points",0)) for p in xi)
+    squad_players=squad if squad is not None else xi
+    squad_cost=sum(float(p.get("price",0)) for p in squad_players) if cost is None else float(cost)
+    budget_left=(float(budget)-squad_cost) if budget is not None else None
+    bench_points=sum(float(p.get("expected_gw_points",0)) for p in (bench or []))
+    locked_count=len(set(locked_ids or []))
+    title="Lagstatistikk" if not locked_count else "Lagstatistikk · låste valg"
+    budget_text=f"£{budget_left:.1f}m" if budget_left is not None else "–"
+    st.markdown(f'''<div class="pitch-stats"><div class="pitch-stats-title">{title}</div><div class="pitch-stat-grid"><div class="pitch-stat"><div class="label">Forventede XI-poeng</div><div class="value">{xi_points:.1f}</div></div><div class="pitch-stat"><div class="label">Benk forventet</div><div class="value">{bench_points:.1f}</div></div><div class="pitch-stat"><div class="label">Troppskostnad</div><div class="value">£{squad_cost:.1f}m</div></div><div class="pitch-stat"><div class="label">Budsjett igjen</div><div class="value">{budget_text}</div></div></div></div>''',unsafe_allow_html=True)
+'''
+source = source.replace(old_pitch,new_pitch)
+
+# The empty build-around pitch uses the same orientation as the completed pitch.
+old_build = '''    with st.container(key="build-pitch"):
+        st.markdown('<div class="pitch-formation">4-4-2 · TOM BANE</div>',unsafe_allow_html=True)
+        g=st.columns([1,2,1])
+        with g[1]:
+            pid=slots["GKP_0"]
+            if pid is None:
+                if st.button("＋",key="plus_GKP_0"): st.session_state.build_active_slot="GKP_0"; st.rerun()
+            else:
+                st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
+                if st.button("✕ Fjern",key="remove_GKP_0"): st.session_state.build_pitch_slots["GKP_0"]=None; st.rerun()
+        for posn,n in [("DEF",4),("MID",4)]:
+            cols=st.columns(4)
+            for i,col in enumerate(cols):
+                with col:
+                    k=f"{posn}_{i}"; pid=slots[k]
+                    if pid is None:
+                        if st.button("＋",key=f"plus_{k}"): st.session_state.build_active_slot=k; st.rerun()
+                    else:
+                        st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
+                        if st.button("✕ Fjern",key=f"remove_{k}"): st.session_state.build_pitch_slots[k]=None; st.rerun()
+        cols=st.columns([1,2,1])
+        for i in range(2):
+            with cols[i+1 if i==0 else i]:
+                k=f"FWD_{i}"; pid=slots[k]
+                if pid is None:
+                    if st.button("＋",key=f"plus_{k}"): st.session_state.build_active_slot=k; st.rerun()
+                else:
+                    st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
+                    if st.button("✕ Fjern",key=f"remove_{k}"): st.session_state.build_pitch_slots[k]=None; st.rerun()
+'''
+new_build = '''    with st.container(key="build-pitch"):
+        st.markdown('<div class="pitch-formation">4-4-2 · TOM BANE</div>',unsafe_allow_html=True)
+        # Attack at the top, defence below, goalkeeper centered at the back.
+        for posn,n in [("FWD",2),("MID",4),("DEF",4)]:
+            cols=st.columns(n,gap="small")
+            for i,col in enumerate(cols):
+                with col:
+                    k=f"{posn}_{i}"; pid=slots[k]
+                    if pid is None:
+                        if st.button("＋",key=f"plus_{k}"): st.session_state.build_active_slot=k; st.rerun()
+                    else:
+                        st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
+                        if st.button("✕ Fjern",key=f"remove_{k}"): st.session_state.build_pitch_slots[k]=None; st.rerun()
+        g=st.columns([1,2,1])
+        with g[1]:
+            pid=slots["GKP_0"]
+            if pid is None:
+                if st.button("＋",key="plus_GKP_0"): st.session_state.build_active_slot="GKP_0"; st.rerun()
+            else:
+                st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
+                if st.button("✕ Fjern",key="remove_GKP_0"): st.session_state.build_pitch_slots["GKP_0"]=None; st.rerun()
+'''
+source = source.replace(old_build,new_build)
+
+# Add the statistics panel to the normal best-team view and build-around view.
+source = source.replace(
+    'render_optimizer_explanation(df,squad,xi,bench,budget)',
+    'render_optimizer_explanation(df,squad,xi,bench,budget)\n        render_pitch_stats(xi,squad,bench,budget,cost)'
+)
+source = source.replace(
+    'st.subheader("🪑 Benk"); render_bench(bench); st.subheader("🎯 Kaptein og visekaptein"); captain_cards(display_xi)',
+    'st.subheader("🪑 Benk"); render_bench(bench); render_pitch_stats(display_xi,squad,bench,budget,cost,selected_ids); st.subheader("🎯 Kaptein og visekaptein"); captain_cards(display_xi)'
 )
 
 exec(source, globals())
