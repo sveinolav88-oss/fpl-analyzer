@@ -1,6 +1,6 @@
 """Runtime compatibility and FPL sync hooks for the Streamlit deployment.
 
-This module is imported automatically by Python.  It keeps the app resilient
+This module is imported automatically by Python. It keeps the app resilient
 when the public FPL API has not published the current Gameweek picks yet, and
 adds a small source overlay so the UI uses the synced bank/free-transfer state
 instead of asking the manager to type it in every Gameweek.
@@ -128,7 +128,8 @@ def _patched_open(file, mode="r", *args, **kwargs):
         '                st.sidebar.success(f"✅ FPL synket · GW{synced_gw} · {free_transfers_manual} FT · £{manager_bank:.1f}m bank")\n'
         '                st.sidebar.caption(f"Analyserer nå GW{current_gw}. Laget hentes automatisk fra FPL når neste GW er publisert.")\n'
         '            elif manager_sync_meta.get("requested_event"):\n'
-        '                st.sidebar.info(f"FPL Team ID er funnet. Spillerlisten for GW{manager_sync_meta.get(\"requested_event\")} er ikke publisert ennå. Vi bruker siste tilgjengelige lag automatisk.")'
+        '                _req_gw=manager_sync_meta.get("requested_event")\n'
+        '                st.sidebar.info(f"FPL Team ID er funnet. Spillerlisten for GW{_req_gw} er ikke publisert ennå. Vi bruker siste tilgjengelige lag automatisk.")'
     )
 
     return io.StringIO(source)
