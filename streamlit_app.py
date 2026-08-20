@@ -29,7 +29,7 @@ source = source.replace(
 
 # FPL picks can legitimately return 404 before the current Gameweek deadline.
 source = source.replace(
-    'from decision_engine import current_gameweek, load_manager, decision_summary',
+    'from decision_engine_v2 import current_gameweek, load_manager, decision_summary',
     '''from decision_engine import current_gameweek, load_manager as _load_manager, decision_summary
 
 def load_manager(entry_id, event):
@@ -296,4 +296,5 @@ source = source.replace(
     'st.subheader("🪑 Benk"); render_bench(bench); render_pitch_stats(display_xi,squad,bench,budget,cost,selected_ids); st.subheader("🎯 Kaptein og visekaptein"); captain_cards(display_xi)'
 )
 
+# LIVE DECISION ENGINE V2
 exec(source, globals())
