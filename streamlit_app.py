@@ -214,7 +214,7 @@ def render_pitch_stats(xi,squad=None,bench=None,budget=None,cost=None,locked_ids
     locked_count=len(set(locked_ids or []))
     title="Lagstatistikk" if not locked_count else "Lagstatistikk · låste valg"
     budget_text=f"£{budget_left:.1f}m" if budget_left is not None else "–"
-    st.markdown(f'''<div class="pitch-stats"><div class="pitch-stats-title">{title}</div><div class="pitch-stat-grid"><div class="pitch-stat"><div class="label">Forventede XI-poeng</div><div class="value">{xi_points:.1f}</div></div><div class="pitch-stat"><div class="label">Benk forventet</div><div class="value">{bench_points:.1f}</div></div><div class="pitch-stat"><div class="label">Troppskostnad</div><div class="value">£{squad_cost:.1f}m</div></div><div class="pitch-stat"><div class="label">Budsjett igjen</div><div class="value">{budget_text}</div></div></div></div>''',unsafe_allow_html=True)
+    st.markdown(f"""<div class="pitch-stats"><div class="pitch-stats-title">{title}</div><div class="pitch-stat-grid"><div class="pitch-stat"><div class="label">Forventede XI-poeng</div><div class="value">{xi_points:.1f}</div></div><div class="pitch-stat"><div class="label">Benk forventet</div><div class="value">{bench_points:.1f}</div></div><div class="pitch-stat"><div class="label">Troppskostnad</div><div class="value">£{squad_cost:.1f}m</div></div><div class="pitch-stat"><div class="label">Budsjett igjen</div><div class="value">{budget_text}</div></div></div></div>""",unsafe_allow_html=True)
 '''
 source = source.replace(old_pitch,new_pitch)
 
