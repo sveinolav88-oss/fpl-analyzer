@@ -15,7 +15,7 @@ try:
     from manager_sync import sync_manager as _sync_manager
 
     # Once a Gameweek deadline has passed, the useful planning target is the
-    # following Gameweek.  Before the deadline, keep analysing the current one.
+    # following Gameweek. Before the deadline, keep analysing the current one.
     _original_current_gameweek = _decision_engine.current_gameweek
 
     def _smart_current_gameweek(data):
@@ -36,15 +36,26 @@ try:
 
     _decision_engine.current_gameweek = _smart_current_gameweek
 
-    # Automatic manager synchronisation.  If the requested event is not
+    # Automatic manager synchronisation. If the requested event is not
     # published yet, sync_manager falls back to the latest available event.
     def _safe_load_manager(entry_id, event):
-        return _sync_manager(entry_id, event, _decision_engine)
+        entry, picks = _sync_manager(entry_id, event, _decision_engine)
+        meta = (picks or {}).get("_sync", {})
+        used = set()
+        for chip in meta.get("chips", []) or []:
+            name = str(chip.get("name", "")).lower().replace(" ", "")
+            if name == "triplecaptain":
+                used.add("TC")
+            elif name == "benchboost":
+                used.add("BB")
+            elif name == "freehit":
+                used.add("FH")
+        _decision_engine._SYNCED_CHIPS = used
+        return entry, picks
 
     _decision_engine.load_manager = _safe_load_manager
 
-    # Preserve the same manager-sync semantics if the app's decision layer
-    # imports the function before the Streamlit source is executed.
+    # Hide already-used one-shot chip values from the planner.
     _original_chip_windows = _decision_engine.chip_windows
 
     def _chip_windows_with_usage(*args, **kwargs):
@@ -66,8 +77,8 @@ except Exception:
 
 
 # The deployed entrypoint reads streamlit_app_v2.py as text before applying its
-# normal optimisations.  We use a narrow source overlay for the two manual
-# finance fields and the manager-sync handoff.  The underlying app remains the
+# normal optimisations. We use a narrow source overlay for the two manual
+# finance fields and the manager-sync handoff. The underlying app remains the
 # source of truth; this only changes how those values are populated.
 _original_open = builtins.open
 
