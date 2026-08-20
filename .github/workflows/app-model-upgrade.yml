@@ -1,0 +1,30 @@
+name: Apply FPL model upgrade
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: "!contains(github.event.head_commit.message, '[fpl-model-upgrade]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Apply Streamlit wiring
+        run: python tools/patch_app.py
+      - name: Validate Python syntax
+        run: python -m py_compile fpl_model_v2.py streamlit_app.py
+      - name: Commit app upgrade
+        run: |
+          git config user.name 'fpl-analyzer-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add streamlit_app.py fpl_model_v2.py
+          git diff --cached --quiet && exit 0
+          git commit -m '[fpl-model-upgrade] Use calibrated FPL projections'
+          git push
