@@ -14,13 +14,60 @@ def load_manager(entry_id, event):
         raise
 
 
+def _numeric_points(points_by_id):
+    """Return a clean int -> float map regardless of how pandas/FPL typed it."""
+    clean = {}
+    for key, value in (points_by_id or {}).items():
+        try:
+            kid = int(key)
+            val = float(value)
+            if val != val:  # NaN
+                val = 0.0
+            clean[kid] = val
+        except (TypeError, ValueError):
+            continue
+    return clean
+
+
 def _legal_xi_with_captain(squad_df, points_by_id):
-    from decision_engine import legal_xi
-    xi, xi_score = legal_xi(squad_df, points_by_id)
-    if not xi:
+    """Build a legal XI using numeric scores; never call nlargest on strings."""
+    from decision_engine import FORMATIONS
+
+    if squad_df is None or squad_df.empty:
         return [], 0.0, 0.0
-    cap_points = max(float(points_by_id.get(int(p["id"]), 0.0)) for p in xi)
-    return xi, xi_score, cap_points
+
+    points = _numeric_points(points_by_id)
+    best = None
+
+    for nd, nm, nf in FORMATIONS:
+        groups = {}
+        ok = True
+        for pos, n in (("GKP", 1), ("DEF", nd), ("MID", nm), ("FWD", nf)):
+            g = squad_df[squad_df["position"].astype(str) == pos].copy()
+            if len(g) < n:
+                ok = False
+                break
+            ids = pd.to_numeric(g["id"], errors="coerce")
+            g["_score"] = ids.map(points).fillna(0.0).astype(float)
+            groups[pos] = g.sort_values("_score", ascending=False).head(n)
+
+        if not ok:
+            continue
+
+        xi = __import__("pandas").concat(
+            [groups["GKP"], groups["DEF"], groups["MID"], groups["FWD"]],
+            ignore_index=True,
+        )
+        score = float(xi["_score"].sum())
+        if best is None or score > best[0]:
+            best = (score, xi)
+
+    if best is None:
+        return [], 0.0, 0.0
+
+    xi = best[1].to_dict("records")
+    cap_points = max((float(points.get(int(p["id"]), 0.0)) for p in xi), default=0.0)
+    return xi, float(best[0]), cap_points
 
 
 def fpl_projection(squad_ids, df, matrix, gameweeks):
@@ -30,11 +77,14 @@ def fpl_projection(squad_ids, df, matrix, gameweeks):
     for gw in gameweeks:
         if gw not in matrix.columns:
             continue
-        points = matrix[gw].to_dict()
+        points = _numeric_points(matrix[gw].to_dict())
         xi, xi_score, cap_points = _legal_xi_with_captain(squad, points)
         by_gw[gw] = round(xi_score + cap_points, 3)
         xi_by_gw[gw] = xi
-        captain_by_gw[gw] = max(xi, key=lambda p: float(points.get(int(p["id"]), 0.0)))["name"] if xi else None
+        captain_by_gw[gw] = max(
+            xi,
+            key=lambda p: float(points.get(int(p["id"]), 0.0)),
+        )["name"] if xi else None
         total += xi_score + cap_points
     return {"total": total, "by_gw": by_gw, "xi_by_gw": xi_by_gw, "captain_by_gw": captain_by_gw}
 
