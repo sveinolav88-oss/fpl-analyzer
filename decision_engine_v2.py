@@ -1,4 +1,6 @@
 """Captain-aware decision layer for the Streamlit app."""
+import pandas as pd
+
 from decision_engine import current_gameweek, load_manager as _load_manager, build_projection_matrix, transfer_candidates, best_two_transfer, chip_windows, wildcard_window
 
 
@@ -21,7 +23,7 @@ def _numeric_points(points_by_id):
         try:
             kid = int(key)
             val = float(value)
-            if val != val:  # NaN
+            if val != val:
                 val = 0.0
             clean[kid] = val
         except (TypeError, ValueError):
@@ -54,7 +56,7 @@ def _legal_xi_with_captain(squad_df, points_by_id):
         if not ok:
             continue
 
-        xi = __import__("pandas").concat(
+        xi = pd.concat(
             [groups["GKP"], groups["DEF"], groups["MID"], groups["FWD"]],
             ignore_index=True,
         )
@@ -81,10 +83,7 @@ def fpl_projection(squad_ids, df, matrix, gameweeks):
         xi, xi_score, cap_points = _legal_xi_with_captain(squad, points)
         by_gw[gw] = round(xi_score + cap_points, 3)
         xi_by_gw[gw] = xi
-        captain_by_gw[gw] = max(
-            xi,
-            key=lambda p: float(points.get(int(p["id"]), 0.0)),
-        )["name"] if xi else None
+        captain_by_gw[gw] = max(xi, key=lambda p: float(points.get(int(p["id"]), 0.0)))["name"] if xi else None
         total += xi_score + cap_points
     return {"total": total, "by_gw": by_gw, "xi_by_gw": xi_by_gw, "captain_by_gw": captain_by_gw}
 
