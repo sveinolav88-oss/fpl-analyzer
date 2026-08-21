@@ -1,0 +1,33 @@
+name: One-shot Decision Engine Fix
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, 'fix: decision engine import') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Streamlit decision engine import
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('streamlit_app_v2.py')
+          s = p.read_text(encoding='utf-8')
+          old = 'from decision_engine import current_gameweek, load_manager, decision_summary'
+          new = 'from decision_engine_v2 import current_gameweek, load_manager, decision_summary'
+          if old not in s:
+              raise SystemExit('Expected import line was not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+          rm -f .github/workflows/one-shot-decision-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add streamlit_app_v2.py .github/workflows/one-shot-decision-fix.yml
+          git commit -m 'fix: decision engine import'
+          git push
