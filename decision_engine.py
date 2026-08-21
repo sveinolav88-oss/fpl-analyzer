@@ -12,9 +12,7 @@ from main import select_squad
 API = "https://fantasy.premierleague.com/api"
 TIMEOUT = 30
 
-# Legal FPL starting formations. The previous version referenced FORMATIONS
-# without defining it, which caused the GW1 Decision Engine to crash as soon
-# as a synced squad was available.
+# Legal FPL starting formations.
 FORMATIONS = (
     (3, 4, 3),
     (3, 5, 2),
@@ -161,9 +159,13 @@ def legal_xi(squad_df, points_by_id):
     for nd, nm, nf in FORMATIONS:
         groups = {}
         ok = True
-        for pos, n in (("GKP",1),("DEF",nd),("MID",nm),("FWD",nf)):
+        for pos, n in (("GKP", 1), ("DEF", nd), ("MID", nm), ("FWD", nf)):
             g = squad_df[squad_df.position == pos].copy()
-            g["_score"] = g["id"].map(points_by_id).fillna(0.0)
+            # FPL/API data can arrive as strings. Always coerce the mapped
+            # score to a numeric float before using pandas nlargest.
+            g["_score"] = pd.to_numeric(
+                g["id"].map(points_by_id), errors="coerce"
+            ).fillna(0.0).astype(float)
             if len(g) < n:
                 ok = False
                 break
@@ -202,7 +204,7 @@ def transfer_candidates(current_ids, df, matrix, bank, free_transfers=1, horizon
     baseline = squad_projection(current_ids, df, matrix, gameweeks)["total"]
     candidates = []
     top_pool = df.copy()
-    top_pool["horizon"] = top_pool.id.map(matrix[gameweeks].sum(axis=1).to_dict()).fillna(0.0)
+    top_pool["horizon"] = pd.to_numeric(top_pool.id.map(matrix[gameweeks].sum(axis=1).to_dict()), errors="coerce").fillna(0.0)
     top_pool = top_pool.sort_values(["horizon", "expected_gw_points"], ascending=False)
     for _, out in current.iterrows():
         sell_price = float(out.get("selling_price", out.get("price", 0.0)))
@@ -264,11 +266,11 @@ def chip_windows(df, fixtures, squad_ids, budget, start_gw, matrix):
         xi, xi_score = legal_xi(squad, points)
         xi_ids = {int(p["id"]) for p in xi}
         bench = squad[~squad.id.isin(xi_ids)].copy()
-        bench["_p"] = bench.id.map(points).fillna(0.0)
+        bench["_p"] = pd.to_numeric(bench.id.map(points), errors="coerce").fillna(0.0)
         bb = float(bench["_p"].sum())
         cap = max(points.get(int(pid),0.0) for pid in squad_ids) if squad_ids else 0.0
         temp = df.copy()
-        temp["expected_gw_points"] = temp.id.map(points).fillna(0.0)
+        temp["expected_gw_points"] = pd.to_numeric(temp.id.map(points), errors="coerce").fillna(0.0)
         fh = select_squad(temp, budget)
         fh_value = float(sum(points.get(int(p["id"]),0.0) for p in fh[3])) if fh else 0.0
         fh_gain = fh_value - xi_score
@@ -286,7 +288,7 @@ def wildcard_window(df, squad_ids, budget, matrix, horizon=4):
     current = squad_projection(set(squad_ids), df, matrix, gameweeks)["total"]
     wc_scores = matrix[gameweeks].sum(axis=1)
     temp = df.copy()
-    temp["expected_gw_points"] = temp.id.map(wc_scores.to_dict()).fillna(0.0)
+    temp["expected_gw_points"] = pd.to_numeric(temp.id.map(wc_scores.to_dict()), errors="coerce").fillna(0.0)
     result = select_squad(temp, budget)
     if not result:
         return None
