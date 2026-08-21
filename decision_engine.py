@@ -12,6 +12,20 @@ from main import select_squad
 API = "https://fantasy.premierleague.com/api"
 TIMEOUT = 30
 
+# Legal FPL starting formations. The previous version referenced FORMATIONS
+# without defining it, which caused the GW1 Decision Engine to crash as soon
+# as a synced squad was available.
+FORMATIONS = (
+    (3, 4, 3),
+    (3, 5, 2),
+    (4, 3, 3),
+    (4, 4, 2),
+    (4, 5, 1),
+    (5, 2, 3),
+    (5, 3, 2),
+    (5, 4, 1),
+)
+
 SESSION = requests.Session()
 SESSION.headers.update({
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151 Safari/537.36",
@@ -117,7 +131,7 @@ def fixture_quality_for_gw(team_id, event, fmap):
     return quality, len(rows)
 
 
-def build_projection_matrix(df, fixtures, start_gw, horizon=6):
+def build_projection_matrix(df, fixtures, start_gw, horizon=4):
     fmap = fixture_map(fixtures)
     events = list(range(int(start_gw), min(38, int(start_gw) + horizon - 1) + 1))
     rows = []
@@ -181,7 +195,7 @@ def squad_projection(squad_ids, df, matrix, gameweeks):
     return {"total": total, "by_gw": by_gw, "xi_by_gw": xi_by_gw}
 
 
-def transfer_candidates(current_ids, df, matrix, bank, free_transfers=1, horizon=6):
+def transfer_candidates(current_ids, df, matrix, bank, free_transfers=1, horizon=4):
     current = df[df.id.isin(current_ids)].copy()
     current_ids = set(int(x) for x in current_ids)
     gameweeks = list(matrix.columns)[:horizon]
@@ -213,7 +227,7 @@ def transfer_candidates(current_ids, df, matrix, bank, free_transfers=1, horizon
     return sorted(candidates, key=lambda x: (x["net_gain"], x["projected_gain"]), reverse=True)
 
 
-def best_two_transfer(current_ids, df, matrix, bank, free_transfers=1, horizon=6):
+def best_two_transfer(current_ids, df, matrix, bank, free_transfers=1, horizon=4):
     if free_transfers < 2:
         return None
     one = transfer_candidates(current_ids, df, matrix, bank, free_transfers=2, horizon=horizon)[:30]
@@ -265,7 +279,7 @@ def chip_windows(df, fixtures, squad_ids, budget, start_gw, matrix):
     return pd.DataFrame(rows)
 
 
-def wildcard_window(df, squad_ids, budget, matrix, horizon=6):
+def wildcard_window(df, squad_ids, budget, matrix, horizon=4):
     gameweeks = list(matrix.columns)[:horizon]
     if not gameweeks:
         return None
@@ -282,9 +296,10 @@ def wildcard_window(df, squad_ids, budget, matrix, horizon=6):
     return {"gain":round(optimal-current,2),"current":round(current,2),"optimal":round(optimal,2),"cost":round(cost,1),"ids":optimal_ids}
 
 
-def decision_summary(df, fixtures, squad_ids, budget, bank, free_transfers, start_gw, horizon=6):
+def decision_summary(df, fixtures, squad_ids, budget, bank, free_transfers, start_gw, horizon=4):
+    horizon = int(horizon or 4)
     matrix = build_projection_matrix(df, fixtures, start_gw, horizon=horizon)
-    gameweeks = list(matrix.columns)
+    gameweeks = list(matrix.columns)[:horizon]
     current_proj = squad_projection(set(squad_ids), df, matrix, gameweeks)
     transfers = transfer_candidates(squad_ids, df, matrix, bank, free_transfers=free_transfers, horizon=horizon)
     two = best_two_transfer(squad_ids, df, matrix, bank, free_transfers=free_transfers, horizon=horizon)
