@@ -1,0 +1,39 @@
+name: Patch live Streamlit app
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, 'fix: use numeric-safe Decision Engine') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch app to use numeric-safe engine and 4-GW horizon
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('streamlit_app_v2.py')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(
+              'from decision_engine import current_gameweek, load_manager, decision_summary',
+              'from decision_engine_v2 import current_gameweek, load_manager, decision_summary',
+              1,
+          )
+          s = s.replace('Simulerer de neste 6 Gameweeks...', 'Simulerer de neste 4 Gameweeks...', 1)
+          s = s.replace('horizon=6)', 'horizon=4)', 1)
+          s = s.replace('6 GW projeksjon', '4 GW projeksjon', 1)
+          s = s.replace('over 6 GW', 'over 4 GW')
+          s = s.replace('de neste 6 GW', 'de neste 4 GW')
+          p.write_text(s, encoding='utf-8')
+          PY
+          rm -f .github/workflows/patch-live-app.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add streamlit_app_v2.py .github/workflows/patch-live-app.yml
+          git commit -m 'fix: use numeric-safe Decision Engine'
+          git push
