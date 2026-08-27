@@ -1,33 +1,15 @@
-# Main Streamlit entrypoint. The full application lives in streamlit_app_v2.py.
-source = open("streamlit_app_v2.py", encoding="utf-8").read()
+import html
+from collections import Counter
 
-# Use the fast bounded optimizer for both the normal Best Team calculation and
-# "Build around my players". The previous beam was too large for Streamlit and
-# could generate millions of Python objects on one button click.
+import streamlit as st
+
+# Run the maintained v2 application, but patch its data/model imports and
+# replace the Gameweek Plan presentation with a proper manager dashboard.
+source = open("streamlit_app_v2.py", encoding="utf-8").read()
 source = source.replace(
     'from main import load_fpl, load_fixtures, build_players, assign_recommendations, select_squad, build_around_players',
     'from main import load_fpl, load_fixtures\nfrom fpl_model_v2 import build_players, assign_recommendations\nfrom fast_squad_optimizer import select_squad, build_around_players, _valid, _objective, _starting_xi',
 )
-
-# Use a calibrated scoring model. FPL ep_next remains a strong prior, but it
-# is no longer double-discounted by the minutes model.
-source = source.replace(
-    'c4.metric(f"Forventede poeng GW{current_gw}", f"{top_player.expected_gw_points:.2f}")',
-    'c4.metric(f"Beste spillerprognose GW{current_gw}", f"{top_player.expected_gw_points:.2f}")',
-)
-source = source.replace('6-GW projeksjon', '4-GW projeksjon')
-source = source.replace('de neste 6 Gameweeks', 'de neste 4 Gameweeks')
-source = source.replace('over 6 GW', 'over 4 GW')
-source = source.replace('neste 6 GW', 'neste 4 GW')
-source = source.replace('horizon=6', 'horizon=4')
-
-
-source = source.replace(
-    'cols=st.columns([1,2,1])\n        for i in range(2):\n            with cols[i+1 if i==0 else i]:',
-    'cols=st.columns([1,1,1,1])\n        for i in range(2):\n            with cols[i+1]:'
-)
-
-# FPL picks can legitimately return 404 before the current Gameweek deadline.
 source = source.replace(
     'from decision_engine_v2 import current_gameweek, load_manager, decision_summary',
     '''from decision_engine_v2 import current_gameweek, load_manager as _load_manager, decision_summary
@@ -43,6 +25,14 @@ def load_manager(entry_id, event):
             return entry, None
         raise'''
 )
+source = source.replace('6-GW projeksjon', '4-GW projeksjon')
+source = source.replace('de neste 6 Gameweeks', 'de neste 4 Gameweeks')
+source = source.replace('over 6 GW', 'over 4 GW')
+source = source.replace('neste 6 GW', 'neste 4 GW')
+source = source.replace('horizon=6', 'horizon=4')
+
+# Keep the manager sync behaviour that already works: if current picks are not
+# published, load the newest available event instead of failing the Team ID.
 source = source.replace(
     'manager_ids=[int(x["element"]) for x in manager_picks.get("picks",[])][:15]',
     'manager_ids=[int(x["element"]) for x in manager_picks.get("picks",[])][:15] if manager_picks else []\n        if manager_picks is None:\n            st.sidebar.info("FPL-laget er funnet. FPL har ikke publisert spillerlisten for denne Gameweeken ennå. Den hentes automatisk når picks blir tilgjengelig.")'
@@ -52,124 +42,151 @@ source = source.replace(
     'st.sidebar.error(f"Kunne ikke hente FPL-laget {entry_id_text}. {type(exc).__name__}: {exc}")'
 )
 
-# Use a 4-GW rolling horizon for transfer decisions.
-source = source.replace('6-GW projeksjon', '4-GW projeksjon')
-source = source.replace('de neste 6 Gameweeks', 'de neste 4 Gameweeks')
-source = source.replace('horizon=6', 'horizon=4')
-source = source.replace('6 GW projeksjon', '4 GW projeksjon')
-source = source.replace('over 6 GW', 'over 4 GW')
-source = source.replace('neste 6 GW', 'neste 4 GW')
+# Replace only the Gameweek Plan tab. All other tools remain in v2.
+tab_start = source.index('with tab1:')
+tab_end = source.index('\nwith tab2:', tab_start)
 
-# Never hide an unexpected fifth bench player.
-source = source.replace(
-    'def render_bench(bench):\n    cols=st.columns(4,gap="small")\n    for i,p in enumerate(bench[:4]):\n        with cols[i]: st.markdown(bench_card(p),unsafe_allow_html=True)',
-    '''def render_bench(bench):
-    if not bench:
-        return
-    cols=st.columns(min(4,len(bench)),gap="small")
-    for i,p in enumerate(bench):
-        with cols[i % len(cols)]: st.markdown(bench_card(p),unsafe_allow_html=True)
-'''
-)
+new_tab = r'''with tab1:
+    # ========================================================
+    # MANAGER DASHBOARD
+    # ========================================================
+    st.markdown("""
+    <style>
+    .gw-hero{padding:1.15rem 1.35rem;border-radius:20px;background:linear-gradient(135deg,#111827,#1f2937);border:1px solid rgba(255,255,255,.08);margin:.2rem 0 1rem}
+    .gw-hero h2{margin:0;font-size:1.8rem}.gw-hero p{margin:.3rem 0 0;opacity:.65}
+    .stat-card{padding:1rem 1.05rem;border-radius:16px;background:linear-gradient(145deg,#111827,#182235);border:1px solid rgba(255,255,255,.08);min-height:104px;box-shadow:0 8px 22px rgba(0,0,0,.12)}
+    .stat-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;opacity:.58;font-weight:800}.stat-value{font-size:1.75rem;font-weight:900;margin-top:.2rem}.stat-sub{font-size:.72rem;opacity:.58;margin-top:.1rem}
+    .dash-panel{padding:1rem 1.05rem;border-radius:18px;background:rgba(17,24,39,.72);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 26px rgba(0,0,0,.12);margin-bottom:1rem}.dash-panel h3{margin:.05rem 0 .75rem}
+    .manager-pitch{position:relative;overflow:hidden;padding:1rem .75rem 1.05rem;border-radius:22px;border:1px solid rgba(155,235,178,.25);background:#246d40;background-image:url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 1000 650' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='white' stroke-opacity='.23' stroke-width='2'%3E%3Crect x='12' y='12' width='976' height='626'/%3E%3Cline x1='12' y1='325' x2='988' y2='325'/%3E%3Ccircle cx='500' cy='325' r='72'/%3E%3Cpath d='M350 12v133h300V12M350 638V505h300v133M425 12v58h150V12M425 638v-58h150v58'/%3E%3C/g%3E%3Cg fill='white' fill-opacity='.2'%3E%3Ccircle cx='500' cy='325' r='3'/%3E%3C/g%3E%3C/svg%3E");background-size:100% 100%;box-shadow:inset 0 0 70px rgba(0,0,0,.16)}
+    .pitch-title{text-align:center;font-size:.65rem;font-weight:900;letter-spacing:.13em;color:rgba(255,255,255,.65);margin-bottom:.25rem}.pitch-row{display:flex;justify-content:space-around;align-items:flex-start;gap:.25rem;min-height:112px}.pitch-player{text-align:center;flex:1;min-width:0}.pitch-player img,.pitch-fallback{width:58px;height:58px;object-fit:contain;border-radius:50%;border:2px solid rgba(255,255,255,.92);background:#20242d;margin:0 auto;display:block}.pitch-fallback{display:flex;align-items:center;justify-content:center;color:white;font-weight:900}.pitch-name{font-size:.76rem;font-weight:850;margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pitch-points{font-size:.69rem;opacity:.78}.badge-cap{display:inline-block;margin-left:.2rem;background:#171b24;color:#fff;border-radius:50%;width:18px;height:18px;line-height:18px;font-size:.62rem;font-weight:900}.badge-vice{display:inline-block;margin-left:.2rem;background:#374151;color:#fff;border-radius:50%;width:18px;height:18px;line-height:18px;font-size:.62rem;font-weight:900}.bench-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem}.bench-item{padding:.6rem .35rem;border-radius:13px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);text-align:center}.bench-item img,.bench-item .pitch-fallback{width:48px;height:48px}.bench-name{font-size:.72rem;font-weight:800;margin-top:.15rem}.bench-meta{font-size:.64rem;opacity:.6}
+    .score-good{color:#72e59a}.score-neutral{color:#f6d77b}.score-bad{color:#ff9187}.transfer-box{padding:.9rem 1rem;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);margin:.55rem 0}.transfer-arrow{font-weight:900}.mini-list{display:flex;flex-direction:column;gap:.35rem}.mini-row{display:flex;justify-content:space-between;gap:.5rem;padding:.5rem .6rem;border-radius:10px;background:rgba(255,255,255,.035)}
+    @media(max-width:800px){.bench-strip{grid-template-columns:repeat(2,1fr)}.pitch-row{min-height:96px}.pitch-player img,.pitch-fallback{width:48px;height:48px}}
+    </style>
+    """, unsafe_allow_html=True)
 
-# Add a hard UI-level squad audit.
-source = source.replace(
-    'score,cost,squad,xi,bench=result\n        a,b,c=st.columns(3);',
-    '''score,cost,squad,xi,bench=result
-        actual_cost=round(sum(float(x.get("price",0)) for x in squad),1)
-        if len(squad)!=15 or actual_cost>budget+1e-9:
-            st.error(f"⚠️ Ugyldig anbefalt tropp: {len(squad)} spillere · £{actual_cost:.1f}m. FPL krever 15 spillere og maks £{budget:.1f}m.")
-            st.stop()
-        a,b,c=st.columns(3);'''
-)
-source = source.replace(
-    'score,cost,squad,_,_=stored; display_xi=build_display_xi(squad,selected_ids,formation)',
-    '''score,cost,squad,_,_=stored
-            actual_cost=round(sum(float(x.get("price",0)) for x in squad),1)
-            if len(squad)!=15 or actual_cost>budget+1e-9:
-                st.error(f"⚠️ Optimizer returnerte en ugyldig tropp: {len(squad)} spillere · £{actual_cost:.1f}m. Resultatet vises ikke.")
-                st.stop()
-            display_xi=build_display_xi(squad,selected_ids,formation)'''
-)
+    st.markdown('<div class="gw-hero"><h2>🧠 Gameweek Decision Engine</h2><p>Din faktiske FPL-tropp · faktiske poeng · statistisk vurdering av neste trekk</p></div>', unsafe_allow_html=True)
 
-# Transparent explanation of the exact optimizer result.
-source = source.replace(
-    'with tab2:\n    st.header("🏆 Beste 15-mannstropp")',
-    '''def render_optimizer_explanation(df, squad, xi, bench, budget):
-    squad_ids={int(x["id"]) for x in squad}
-    budget_units=int(round(float(budget)*10))
-    cost_units=sum(int(round(float(x.get("price",0))*10)) for x in squad)
-    remaining_units=budget_units-cost_units
-    xi_points=sum(float(x.get("expected_gw_points",0)) for x in xi)
-    bench_points=sum(float(x.get("expected_gw_points",0)) for x in bench)
-    availability=sum(max(0,min(1,float(x.get("expected_minutes",0))/90)) for x in bench)
-    objective=xi_points + .18*bench_points + .05*availability
-
-    st.markdown("### 🧠 Hvorfor valgte roboten dette laget?")
-    m1,m2,m3,m4=st.columns(4)
-    m1.metric("Forventede XI-poeng",f"{xi_points:.1f}")
-    m2.metric("Benkens forventede poeng",f"{bench_points:.1f}")
-    m3.metric("Budsjett brukt",f"£{cost_units/10:.1f}m")
-    m4.metric("Budsjett igjen",f"£{remaining_units/10:.1f}m")
-    st.info("Modellen prioriterer forventede GW-poeng i startelleveren. Benken gir en mindre sekundær score, og modellen kontrollerer samtidig budsjett, 15 spillere, posisjonskrav og maks. 3 spillere fra samme klubb.")
-
-    upgrades=[]
-    for old in squad:
-        old_id=int(old["id"]); pos=old.get("position"); old_price=float(old.get("price",0))
-        candidates=df[(df["position"]==pos) & (~df["id"].isin(squad_ids))].copy()
-        candidates=candidates[(candidates["price"]>old_price) & (candidates["price"]<=old_price + remaining_units/10 + 1e-9)]
-        candidates=candidates.sort_values("expected_gw_points",ascending=False).head(12)
-        for _,cand in candidates.iterrows():
-            trial=list(squad)
-            old_index=next((i for i,p in enumerate(trial) if int(p["id"])==old_id),None)
-            if old_index is None: continue
-            trial[old_index]=cand.to_dict()
-            if not _valid(trial,budget_units): continue
-            trial_xi,_=_starting_xi(trial)
-            delta=_objective(trial)-objective
-            if delta>0.001:
-                upgrades.append({
-                    "Bytte":f"{old.get('name','?')} → {cand.get('name','?')}",
-                    "Ekstra kostnad":f"£{float(cand.get('price',0))-old_price:.1f}m",
-                    "Ny kostnad":f"£{sum(float(x.get('price',0)) for x in trial):.1f}m",
-                    "Endring i modellscore":f"+{delta:.2f}",
-                    "Forventede XI-poeng":f"{sum(float(x.get('expected_gw_points',0)) for x in trial_xi):.1f}",
-                })
-    if upgrades:
-        upgrades=sorted(upgrades,key=lambda x:float(x["Endring i modellscore"].replace("+","")),reverse=True)[:8]
-        st.markdown("#### 🔎 Nærmeste oppgraderinger")
-        st.caption("Lovlige, dyrere én-spiller-bytter som er mulig med pengene som er igjen. Scoreøkningen vurderer hele troppen, ikke bare den nye spilleren.")
-        st.dataframe(pd.DataFrame(upgrades),use_container_width=True,hide_index=True)
+    if not manager_ids or not manager_picks:
+        st.info("Legg inn FPL Team ID i sidepanelet og trykk «Hent mitt FPL-lag». Når FPL har publisert picks, vises laget automatisk her.")
     else:
-        st.success("Ingen testet, lovlig dyrere én-spiller-oppgradering med pengene som er igjen gir høyere totalscore. Ledig budsjett er derfor ikke automatisk et tegn på dårlig optimalisering.")
+        picks = list(manager_picks.get("picks",[]) or [])
+        pick_map = {int(x.get("element")): x for x in picks}
+        # FPL's entry_history is the authoritative GW score. Do not replace it
+        # with modelled expected points.
+        history = manager_picks.get("entry_history",{}) or {}
+        actual_points = history.get("points")
+        if actual_points is None:
+            actual_points = 0
+            for pick in picks:
+                pid=int(pick.get("element",0)); p=PLAYER_LOOKUP.get(pid,{})
+                actual_points += int(pick.get("multiplier",1) or 1) * int(p.get("event_points",0) or 0)
+        actual_points=float(actual_points)
+        bench_points=float(history.get("points_on_bench",0) or 0)
+        transfer_cost=float(history.get("event_transfers_cost",0) or 0)
+        net_points=actual_points-transfer_cost
 
-    with st.expander("Se hvordan modellen vurderer laget"):
-        st.write(f"**Modellscore:** {objective:.2f}")
-        st.write("**Primærfaktor:** forventede poeng i startelleveren.")
-        st.write("**Sekundærfaktor:** 18 % av benkens forventede poeng + 5 % tilgjengelighet for benken.")
-        st.write("**Harde regler:** 15 spillere · 2 GKP · 5 DEF · 5 MID · 3 FWD · maks 3 fra samme klubb · budsjettgrense.")
-        st.write("**Viktig:** Pengene skal bare brukes dersom en lovlig kombinasjon gir høyere forventet totalscore.")
+        # FPL positions 1-11 are the actual XI, 12-15 are bench order.
+        ordered=sorted(picks,key=lambda x:int(x.get("position",99)))
+        xi_picks=ordered[:11]; bench_picks=ordered[11:15]
+        xi=[]; bench=[]
+        for pick in xi_picks:
+            pid=int(pick.get("element",0)); p=dict(PLAYER_LOOKUP.get(pid,{}))
+            if p:
+                p["is_captain"]=bool(pick.get("is_captain")); p["is_vice"]=bool(pick.get("is_vice_captain")); p["actual_points"]=float(p.get("event_points",0) or 0); xi.append(p)
+        for pick in bench_picks:
+            pid=int(pick.get("element",0)); p=dict(PLAYER_LOOKUP.get(pid,{}))
+            if p:
+                p["actual_points"]=float(p.get("event_points",0) or 0); bench.append(p)
 
-with tab2:
-    st.header("🏆 Beste 15-mannstropp")'''
-)
-source = source.replace(
-    'st.subheader("🪑 Benk"); render_bench(bench)',
-    'st.subheader("🪑 Benk"); render_bench(bench)\n        render_optimizer_explanation(df,squad,xi,bench,budget)'
-)
+        cap=next((p for p in xi if p.get("is_captain")),None)
+        vice=next((p for p in xi if p.get("is_vice")),None)
+        formation=f'{sum(p.get("position")=="DEF" for p in xi)}-{sum(p.get("position")=="MID" for p in xi)}-{sum(p.get("position")=="FWD" for p in xi)}'
+        team_value=float(manager_entry.get("last_deadline_value",0) or 0)/10.0 if manager_entry else 0
+        bank=float(manager_entry.get("last_deadline_bank",0) or 0)/10.0 if manager_entry else float(manager_bank)
+        rank=manager_entry.get("summary_overall_rank") if manager_entry else None
+        total=manager_entry.get("summary_overall_points") if manager_entry else None
+        free_ft=int((manager_picks.get("_sync") or {}).get("free_transfers",free_transfers_manual))
 
-# Add a compact, consistent statistics panel below every completed pitch.
-source = source.replace(
-    '</style>',
-    '''
-.pitch-stats{margin:.35rem 0 1.2rem;padding:.9rem 1rem;border-radius:18px;border:1px solid rgba(255,255,255,.10);background:linear-gradient(135deg,rgba(31,41,55,.78),rgba(17,24,39,.92));box-shadow:0 8px 24px rgba(0,0,0,.14)}
-.pitch-stats-title{font-size:.72rem;font-weight:850;letter-spacing:.10em;text-transform:uppercase;color:rgba(255,255,255,.60);margin-bottom:.55rem}.pitch-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.55rem}.pitch-stat{padding:.55rem .65rem;border-radius:12px;background:rgba(255,255,255,.045);text-align:center}.pitch-stat .label{font-size:.67rem;color:rgba(255,255,255,.58)}.pitch-stat .value{font-size:1.02rem;font-weight:850;color:white;margin-top:.12rem}@media(max-width:800px){.pitch-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-</style>'''
-)
+        c1,c2,c3,c4,c5=st.columns(5)
+        c1.markdown(f'<div class="stat-card"><div class="stat-label">GW{current_gw} poeng</div><div class="stat-value score-good">{actual_points:.0f}</div><div class="stat-sub">Faktisk FPL-score</div></div>',unsafe_allow_html=True)
+        c2.markdown(f'<div class="stat-card"><div class="stat-label">Snitt</div><div class="stat-value">{(actual_points/current_gw):.1f}</div><div class="stat-sub">Sesongsnitt</div></div>',unsafe_allow_html=True)
+        c3.markdown(f'<div class="stat-card"><div class="stat-label">Lagverdi</div><div class="stat-value">£{team_value:.1f}m</div><div class="stat-sub">Bank £{bank:.1f}m</div></div>',unsafe_allow_html=True)
+        c4.markdown(f'<div class="stat-card"><div class="stat-label">Free transfers</div><div class="stat-value">{free_ft}</div><div class="stat-sub">Neste GW</div></div>',unsafe_allow_html=True)
+        rank_text=f'{int(rank):,}' if rank is not None else 'Ikke tilgjengelig'
+        total_text=f'{int(total):,}' if total is not None else '–'
+        c5.markdown(f'<div class="stat-card"><div class="stat-label">Overall</div><div class="stat-value">{total_text}</div><div class="stat-sub">Rank {rank_text}</div></div>',unsafe_allow_html=True)
 
-# Keep the pitch itself aligned with the real football layout: attack at the
-# top, defence below midfield, and the goalkeeper centered at the back/bottom.
-old_pitch = '''def render_static_pitch(xi,formation,locked_ids=None,title="STARTING XI",key="best-pitch"):
+        left,right=st.columns([1.35,.9],gap="large")
+        with left:
+            st.markdown(f'<div class="dash-panel"><h3>🏟️ Laget mitt · GW{current_gw} <span style="float:right;opacity:.6;font-size:.75rem">{formation}</span></h3>',unsafe_allow_html=True)
+            def pitch_player(p):
+                url=str(p.get("image_url","") or "").strip(); name=html.escape(p.get("name","?")); pts=p.get("actual_points",0)
+                if url:
+                    avatar=f'<img src="{html.escape(url)}" alt="{name}" loading="lazy" onerror=\'this.style.display="none";this.nextElementSibling.style.display="flex"\'>'
+                    avatar+=f'<span class="pitch-fallback" style="display:none">{html.escape(name[:2].upper())}</span>'
+                else:
+                    avatar=f'<span class="pitch-fallback">{html.escape(name[:2].upper())}</span>'
+                badge='<span class="badge-cap">C</span>' if p.get("is_captain") else ('<span class="badge-vice">V</span>' if p.get("is_vice") else '')
+                return f'<div class="pitch-player">{avatar}<div class="pitch-name">{name}{badge}</div><div class="pitch-points">{pts:.0f} p</div></div>'
+            groups={"FWD":[],"MID":[],"DEF":[],"GKP":[]}
+            for p in xi: groups[p.get("position")].append(p)
+            st.markdown('<div class="manager-pitch"><div class="pitch-title">DIN STARTING XI</div>',unsafe_allow_html=True)
+            for pos in ["FWD","MID","DEF","GKP"]:
+                st.markdown('<div class="pitch-row">'+''.join(pitch_player(p) for p in groups[pos])+'</div>',unsafe_allow_html=True)
+            st.markdown('</div>',unsafe_allow_html=True)
+            st.markdown('<div style="height:.5rem"></div><b>🪑 Benk</b>',unsafe_allow_html=True)
+            bench_html=''.join(f'<div class="bench-item">{pitch_player(p)}</div>' for p in bench)
+            st.markdown(f'<div class="bench-strip">{bench_html}</div>',unsafe_allow_html=True)
+            st.markdown('</div>',unsafe_allow_html=True)
+
+        with right:
+            st.markdown('<div class="dash-panel"><h3>📊 GW-poengfordeling</h3>',unsafe_allow_html=True)
+            bypos=Counter()
+            for p in xi: bypos[p.get("position")]+=float(p.get("actual_points",0))*(2 if p.get("is_captain") else 1)
+            labels=[("Angrep",bypos["FWD"]),("Midtbane",bypos["MID"]),("Forsvar",bypos["DEF"]),("Keeper",bypos["GKP"])]
+            for label,val in labels:
+                pct=(val/actual_points*100) if actual_points else 0
+                st.markdown(f'<div class="mini-row"><span>{label}</span><b>{val:.0f} p <span style="opacity:.55">({pct:.0f}%)</span></b></div>',unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align:center;font-size:2.2rem;font-weight:900;margin:.7rem 0">{actual_points:.0f}<div style="font-size:.7rem;opacity:.55;font-weight:700">TOTAL GW{current_gw}</div></div>',unsafe_allow_html=True)
+            st.markdown('</div>',unsafe_allow_html=True)
+
+            top=sorted(xi,key=lambda p:p.get("actual_points",0),reverse=True)[:5]
+            st.markdown('<div class="dash-panel"><h3>🏆 Topp 5 poeng</h3>',unsafe_allow_html=True)
+            for i,p in enumerate(top,1):
+                extra=' ×2' if p.get("is_captain") else ''
+                st.markdown(f'<div class="mini-row"><span>{i}. <b>{html.escape(p.get("name","?"))}</b></span><b>{float(p.get("actual_points",0)):.0f}{extra}</b></div>',unsafe_allow_html=True)
+            st.markdown('</div>',unsafe_allow_html=True)
+
+        # Next-GW recommendation engine: show modelled players, but keep actual
+        # GW score completely separate from expected points.
+        st.markdown(f'<div class="dash-panel"><h3>🎯 Gameweek {current_gw+1} · foreløpig plan</h3>',unsafe_allow_html=True)
+        try:
+            summary=decision_summary(df,fixtures,manager_ids,float(budget),float(bank),int(free_ft),current_gw,horizon=4)
+            best=summary.get("transfers",[])[0] if summary.get("transfers") else None
+            if best:
+                st.markdown(f'<div class="transfer-box"><b>ANBEFALT BYTTE</b><div style="font-size:1.1rem;margin-top:.3rem"><span class="transfer-arrow">{html.escape(str(best.get("out","?")))}</span> → <span class="score-good">{html.escape(str(best.get("in","?")))}</span></div><div style="opacity:.7;margin-top:.3rem">Forventet gevinst over 4 GW: <b>{float(best.get("projected_gain",0)):+.2f}</b> · Hit: -{best.get("hit",0)} · Netto: <b>{float(best.get("net_gain",0)):+.2f}</b></div></div>',unsafe_allow_html=True)
+            else:
+                st.info("Ingen transfer gir tydelig positiv nettoverdi akkurat nå. HOLD er et gyldig modellresultat.")
+            proj=summary.get("current",{}).get("by_gw",{})
+            if proj:
+                st.markdown('<div class="mini-list">'+''.join(f'<div class="mini-row"><span>GW{gw}</span><b>{float(val):.1f} forventede XI-poeng</b></div>' for gw,val in proj.items())+'</div>',unsafe_allow_html=True)
+            st.caption("Dette er modellens forventninger — ikke faktiske poeng. Faktiske GW-poeng hentes direkte fra FPL og vises separat øverst.")
+        except Exception as exc:
+            st.warning(f"Neste GW-analyse kunne ikke beregnes akkurat nå: {exc}")
+        st.markdown('</div>',unsafe_allow_html=True)
+
+        # Explicit points audit: actual FPL score is never confused with the model.
+        st.markdown('<div class="dash-panel"><h3>🔍 Poengkontroll</h3>',unsafe_allow_html=True)
+        st.markdown(f'**Faktisk FPL-score:** {actual_points:.0f} poeng · **Transferkostnad:** -{transfer_cost:.0f} · **Netto:** {net_points:.0f} · **På benken:** {bench_points:.0f}')
+        st.caption("FPLs egen entry_history.points er fasiten for Gameweek-score. Modellens expected_gw_points brukes kun til prognoser og beslutninger fremover.")
+        st.markdown('</div>',unsafe_allow_html=True)
+        st.caption(f"Sist synkronisert fra FPL · Gameweek {current_gw} · 4-GW beslutningshorisont")
+'''
+source = source[:tab_start] + new_tab + source[tab_end:]
+
+# Fix the other pitch renderer as well: attack at the top, defence below
+# midfield, and our goalkeeper centered at our goal.
+old='''def render_static_pitch(xi,formation,locked_ids=None,title="STARTING XI",key="best-pitch"):
     locked_ids=set(locked_ids or []); by={p:[] for p in ["GKP","DEF","MID","FWD"]}
     for p in xi: by[p["position"]].append(p)
     shape=formation_shape(formation)
@@ -192,109 +209,22 @@ old_pitch = '''def render_static_pitch(xi,formation,locked_ids=None,title="START
             for i,p in enumerate(f):
                 with cols[i]: st.markdown(f'<div class="pitch-slot">{player_card(p,p["id"] in locked_ids)}</div>',unsafe_allow_html=True)
 '''
-new_pitch = '''def render_pitch_line(players, locked_ids):
-    players=list(players)
-    if not players:
-        return
-    if len(players)==1:
-        cols=st.columns([1,2,1],gap="small")
-        targets=[cols[1]]
-    else:
-        cols=st.columns(len(players),gap="small")
-        targets=cols
-    for col,p in zip(targets,players):
-        with col:
-            st.markdown(f'<div class="pitch-slot">{player_card(p,p["id"] in locked_ids)}</div>',unsafe_allow_html=True)
-
-def render_static_pitch(xi,formation,locked_ids=None,title="STARTING XI",key="best-pitch"):
+new='''def render_static_pitch(xi,formation,locked_ids=None,title="STARTING XI",key="best-pitch"):
     locked_ids=set(locked_ids or []); by={p:[] for p in ["GKP","DEF","MID","FWD"]}
     for p in xi: by[p["position"]].append(p)
     shape=formation_shape(formation)
     with st.container(key=key):
         st.markdown(f'<div class="pitch-formation">{esc(title)}</div>',unsafe_allow_html=True)
-        # Football orientation: opponents' goal at the top, our goal at the bottom.
-        render_pitch_line(by["FWD"][:shape["FWD"]],locked_ids)
-        render_pitch_line(by["MID"][:shape["MID"]],locked_ids)
-        render_pitch_line(by["DEF"][:shape["DEF"]],locked_ids)
-        render_pitch_line(by["GKP"][:1],locked_ids)
-
-def render_pitch_stats(xi,squad=None,bench=None,budget=None,cost=None,locked_ids=None):
-    xi_points=sum(float(p.get("expected_gw_points",0)) for p in xi)
-    squad_players=squad if squad is not None else xi
-    squad_cost=sum(float(p.get("price",0)) for p in squad_players) if cost is None else float(cost)
-    budget_left=(float(budget)-squad_cost) if budget is not None else None
-    bench_points=sum(float(p.get("expected_gw_points",0)) for p in (bench or []))
-    locked_count=len(set(locked_ids or []))
-    title="Lagstatistikk" if not locked_count else "Lagstatistikk · låste valg"
-    budget_text=f"£{budget_left:.1f}m" if budget_left is not None else "–"
-    st.markdown(f"""<div class="pitch-stats"><div class="pitch-stats-title">{title}</div><div class="pitch-stat-grid"><div class="pitch-stat"><div class="label">Forventede XI-poeng</div><div class="value">{xi_points:.1f}</div></div><div class="pitch-stat"><div class="label">Benk forventet</div><div class="value">{bench_points:.1f}</div></div><div class="pitch-stat"><div class="label">Troppskostnad</div><div class="value">£{squad_cost:.1f}m</div></div><div class="pitch-stat"><div class="label">Budsjett igjen</div><div class="value">{budget_text}</div></div></div></div>""",unsafe_allow_html=True)
-'''
-source = source.replace(old_pitch,new_pitch)
-
-# The empty build-around pitch uses the same orientation as the completed pitch.
-old_build = '''    with st.container(key="build-pitch"):
-        st.markdown('<div class="pitch-formation">4-4-2 · TOM BANE</div>',unsafe_allow_html=True)
-        g=st.columns([1,2,1])
-        with g[1]:
-            pid=slots["GKP_0"]
-            if pid is None:
-                if st.button("＋",key="plus_GKP_0"): st.session_state.build_active_slot="GKP_0"; st.rerun()
-            else:
-                st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
-                if st.button("✕ Fjern",key="remove_GKP_0"): st.session_state.build_pitch_slots["GKP_0"]=None; st.rerun()
-        for posn,n in [("DEF",4),("MID",4)]:
-            cols=st.columns(4)
+        for pos in ["FWD","MID","DEF"]:
+            cols=st.columns(max(1,shape[pos]),gap="small")
             for i,col in enumerate(cols):
                 with col:
-                    k=f"{posn}_{i}"; pid=slots[k]
-                    if pid is None:
-                        if st.button("＋",key=f"plus_{k}"): st.session_state.build_active_slot=k; st.rerun()
-                    else:
-                        st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
-                        if st.button("✕ Fjern",key=f"remove_{k}"): st.session_state.build_pitch_slots[k]=None; st.rerun()
-        cols=st.columns([1,2,1])
-        for i in range(2):
-            with cols[i+1 if i==0 else i]:
-                k=f"FWD_{i}"; pid=slots[k]
-                if pid is None:
-                    if st.button("＋",key=f"plus_{k}"): st.session_state.build_active_slot=k; st.rerun()
-                else:
-                    st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
-                    if st.button("✕ Fjern",key=f"remove_{k}"): st.session_state.build_pitch_slots[k]=None; st.rerun()
-'''
-new_build = '''    with st.container(key="build-pitch"):
-        st.markdown('<div class="pitch-formation">4-4-2 · TOM BANE</div>',unsafe_allow_html=True)
-        # Attack at the top, defence below, goalkeeper centered at the back.
-        for posn,n in [("FWD",2),("MID",4),("DEF",4)]:
-            cols=st.columns(n,gap="small")
-            for i,col in enumerate(cols):
-                with col:
-                    k=f"{posn}_{i}"; pid=slots[k]
-                    if pid is None:
-                        if st.button("＋",key=f"plus_{k}"): st.session_state.build_active_slot=k; st.rerun()
-                    else:
-                        st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
-                        if st.button("✕ Fjern",key=f"remove_{k}"): st.session_state.build_pitch_slots[k]=None; st.rerun()
+                    p=by[pos][i] if i<len(by[pos]) else None
+                    st.markdown(f'<div class="pitch-slot">{player_card(p,p["id"] in locked_ids) if p else ""}</div>',unsafe_allow_html=True)
         g=st.columns([1,2,1])
         with g[1]:
-            pid=slots["GKP_0"]
-            if pid is None:
-                if st.button("＋",key="plus_GKP_0"): st.session_state.build_active_slot="GKP_0"; st.rerun()
-            else:
-                st.markdown(player_card(PLAYER_LOOKUP[pid],True),unsafe_allow_html=True)
-                if st.button("✕ Fjern",key="remove_GKP_0"): st.session_state.build_pitch_slots["GKP_0"]=None; st.rerun()
+            p=by["GKP"][:1]; st.markdown(f'<div class="pitch-slot">{player_card(p[0],p[0]["id"] in locked_ids) if p else ""}</div>',unsafe_allow_html=True)
 '''
-source = source.replace(old_build,new_build)
+source = source.replace(old,new)
 
-# Add the statistics panel to the normal best-team view and build-around view.
-source = source.replace(
-    'render_optimizer_explanation(df,squad,xi,bench,budget)',
-    'render_optimizer_explanation(df,squad,xi,bench,budget)\n        render_pitch_stats(xi,squad,bench,budget,cost)'
-)
-source = source.replace(
-    'st.subheader("🪑 Benk"); render_bench(bench); st.subheader("🎯 Kaptein og visekaptein"); captain_cards(display_xi)',
-    'st.subheader("🪑 Benk"); render_bench(bench); render_pitch_stats(display_xi,squad,bench,budget,cost,selected_ids); st.subheader("🎯 Kaptein og visekaptein"); captain_cards(display_xi)'
-)
-
-# LIVE DECISION ENGINE V2
 exec(source, globals())
