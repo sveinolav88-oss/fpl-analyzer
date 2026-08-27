@@ -1,0 +1,24 @@
+name: Football Value Model
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 10 * * *"
+
+jobs:
+  run-model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r betting_bot/requirements.txt
+      - name: Run model
+        env:
+          BANKROLL_EUR: "100"
+          MAX_DAILY_EXPOSURE_EUR: "5"
+          MAX_BETS_PER_DAY: "5"
+          MIN_EDGE: "0.05"
+          PAPER_MODE: "true"
+        run: python -m betting_bot.runner
